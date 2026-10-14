@@ -2,7 +2,7 @@
   "id": "FEAT-004",
   "type": "feat",
   "description": "Implement the PayPal checkout flow: PurchaseReviewScreen, CheckoutScreen (creates order + opens url_launcher + waits for user tap + captures), CheckoutReturnScreen, and TransactionResultScreen. This is the most security-sensitive FEAT. The critical invariant: NEVER display payment success until backend returns verified=true from POST /api/v1/checkout/capture. Depends on FEAT-001, FEAT-002, FEAT-003. FEAT-005 is independent.",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "Step 1 — Implement mobile/lib/features/purchase_review/purchase_review_screen.dart. Replace the stub. Receives a RankedProduct via GoRouter extras. Show: product name (large bold), formatted price with currency, a section 'Constraint Verification' listing each entry in constraintResults as a row with ConstraintBadge. If any constraint result is 'UNKNOWN', show a yellow warning banner: 'The following attributes could not be verified: [comma-separated list of UNKNOWN attribute names]'. Show estimated total as the product price. Two buttons: 'Confirm and Pay with PayPal' (ElevatedButton, blue) and 'Cancel' (TextButton, pops back). 'Confirm and Pay with PayPal' navigates to '/checkout/${product.productResultId}?orderId=' (orderId is empty at this point — it will be created by CheckoutScreen). Pass the full RankedProduct as GoRouter extras.",
 
@@ -32,5 +32,5 @@
     "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter build apk --debug"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Implemented CheckoutState (Freezed sealed class with 6 variants: idle, creatingOrder, awaitingApproval, capturing, success, failure), CheckoutNotifier (@riverpod Notifier), CheckoutScreen (ConsumerStatefulWidget with post-frame createOrder call to satisfy Riverpod 3.x build-phase restriction), CheckoutReturnScreen, PurchaseReviewScreen (with UNKNOWN warning banner), and TransactionResultScreen (FutureProvider). Security invariant enforced: CheckoutSuccess is set ONLY when backend verified==true; verified==false → CheckoutFailure with required message. All 11 tests pass (flutter test), flutter analyze 0 issues, flutter build apk --debug succeeds."
 }
