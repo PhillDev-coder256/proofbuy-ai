@@ -89,7 +89,13 @@ class Channel3Service:
         price = offers[0]["price"]["price"] if offers else None
         currency = offers[0]["price"]["currency"] if offers else None
         source_url = offers[0]["url"] if offers else None
-        image_url = images[0] if images else None
+
+        # images[] can be strings or objects with a "url" key
+        raw_image = images[0] if images else None
+        if isinstance(raw_image, dict):
+            image_url = raw_image.get("url")
+        else:
+            image_url = raw_image  # plain URL string
 
         # Build specs: merge key_features list (as {k: k}) with structured_attributes dict
         if isinstance(key_features, list):
@@ -101,8 +107,14 @@ class Channel3Service:
         specs.update(structured_attributes)
 
         name = raw.get("title", raw.get("name", ""))
-        brands = raw.get("brands", [None])
-        merchant = brands[0] if brands else None
+
+        # brands[] can be strings or objects with a "name" key
+        brands = raw.get("brands", [])
+        if brands:
+            first_brand = brands[0]
+            merchant = first_brand.get("name") if isinstance(first_brand, dict) else first_brand
+        else:
+            merchant = None
 
         return NormalizedProduct(
             channel3_product_id=raw["id"],

@@ -179,8 +179,8 @@ flutter run --dart-define=BACKEND_URL=https://your-backend.onrender.com
 |---|---|---|
 | `DATABASE_URL` | No | PostgreSQL URL (default: SQLite) |
 | `CHANNEL3_API_KEY` | No | Channel3 API key (mock mode if empty) |
-| `AI_PROVIDER_API_KEY` | No | OpenAI API key (mock mode if empty) |
-| `AI_MODEL` | No | OpenAI model (default: gpt-4o-2024-08-06) |
+| `AI_PROVIDER_API_KEY` | No | Groq API key (mock mode if empty) |
+| `AI_MODEL` | No | Groq model (default: openai/gpt-oss-120b) |
 | `PAYPAL_CLIENT_ID` | No | PayPal client ID (mock mode if empty) |
 | `PAYPAL_CLIENT_SECRET` | No | PayPal client secret |
 | `PAYPAL_ENVIRONMENT` | No | `sandbox` or `live` (default: sandbox) |

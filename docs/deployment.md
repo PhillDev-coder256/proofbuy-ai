@@ -18,8 +18,8 @@ All secrets are set via environment variables. Never commit `.env` files.
 |---|---|---|
 | `DATABASE_URL` | Yes | `postgresql+asyncpg://user:pass@host:5432/db` |
 | `CHANNEL3_API_KEY` | For real products | Get from https://docs.trychannel3.com |
-| `AI_PROVIDER_API_KEY` | For real AI extraction | OpenAI API key from platform.openai.com |
-| `AI_MODEL` | No | Default: `gpt-4o-2024-08-06` |
+| `AI_PROVIDER_API_KEY` | For real AI extraction | Groq API key from console.groq.com |
+| `AI_MODEL` | No | Default: `openai/gpt-oss-120b` |
 | `PAYPAL_CLIENT_ID` | For real payments | From PayPal Developer Dashboard |
 | `PAYPAL_CLIENT_SECRET` | For real payments | From PayPal Developer Dashboard |
 | `PAYPAL_ENVIRONMENT` | No | `sandbox` (default) or `live` |

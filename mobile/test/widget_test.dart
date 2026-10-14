@@ -10,6 +10,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     // The app navigates to OnboardingScreen on first launch.
-    expect(find.text('ProofBuy AI'), findsOneWidget);
+    // Title uses RichText with two spans — find by widget type instead.
+    expect(find.text('Get Started'), findsOneWidget);
   });
 }

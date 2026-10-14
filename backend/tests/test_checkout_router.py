@@ -10,6 +10,16 @@ from app.models.purchase_record import PurchaseRecord
 from app.models.transaction import Transaction
 
 
+@pytest.fixture(autouse=True)
+def force_mock_services(monkeypatch):
+    """Force all external services into mock mode for router tests."""
+    import app.config as cfg
+    monkeypatch.setattr(cfg.settings, "paypal_client_id", "")
+    monkeypatch.setattr(cfg.settings, "paypal_client_secret", "")
+    monkeypatch.setattr(cfg.settings, "ai_provider_api_key", "")
+    monkeypatch.setattr(cfg.settings, "channel3_api_key", "")
+
+
 async def create_session_and_product(price: float = 49.99, currency: str = "USD"):
     """Insert a ShoppingSession + ProductResult and return their model instances."""
     async with TestSessionLocal() as db:

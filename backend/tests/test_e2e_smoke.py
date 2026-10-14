@@ -1,9 +1,19 @@
 """
 End-to-end smoke test: full happy-path workflow using mock services.
-No real API keys required — Channel3, OpenAI, and PayPal all run in mock mode.
+No real API keys required — Channel3, OpenAI/Groq, and PayPal all run in mock mode.
 """
 import pytest
 from httpx import AsyncClient
+
+
+@pytest.fixture(autouse=True)
+def force_mock_services(monkeypatch):
+    """Ensure all external services run in mock mode regardless of .env settings."""
+    import app.config as cfg
+    monkeypatch.setattr(cfg.settings, "ai_provider_api_key", "")
+    monkeypatch.setattr(cfg.settings, "channel3_api_key", "")
+    monkeypatch.setattr(cfg.settings, "paypal_client_id", "")
+    monkeypatch.setattr(cfg.settings, "paypal_client_secret", "")
 
 
 @pytest.mark.asyncio

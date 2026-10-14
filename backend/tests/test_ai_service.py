@@ -3,10 +3,22 @@ Tests for AIService in mock mode (no real API calls).
 All async tests use pytest-asyncio with the anyio backend (matches conftest.py).
 """
 import pytest
+from unittest.mock import patch
 
 from app.services.ai_service import AIService
 from app.schemas.requirements import ShoppingRequirements
 from app.core.exceptions import AIRefusalError, AIInvalidOutputError
+
+
+# ---------------------------------------------------------------------------
+# Fixture: force mock mode regardless of environment API key
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=False)
+def mock_mode(monkeypatch):
+    """Patch settings so AIService always runs in mock mode (no API calls)."""
+    import app.config as cfg
+    monkeypatch.setattr(cfg.settings, "ai_provider_api_key", "")
 
 
 # ---------------------------------------------------------------------------
@@ -38,7 +50,7 @@ def test_aiservice_class_importable():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.asyncio
-async def test_mock_mode_returns_valid_requirements_laptop():
+async def test_mock_mode_returns_valid_requirements_laptop(mock_mode):
     """POST brief containing 'laptop' returns a ShoppingRequirements with expected fields."""
     svc = AIService()
     result = await svc.extract_requirements("I need a laptop under $1000 with 16GB RAM")
@@ -54,7 +66,7 @@ async def test_mock_mode_returns_valid_requirements_laptop():
 
 
 @pytest.mark.asyncio
-async def test_mock_mode_laptop_has_ram_and_price_constraints():
+async def test_mock_mode_laptop_has_ram_and_price_constraints(mock_mode):
     """Laptop mock must include ram_gb (gte) and price_usd (lte) constraints."""
     svc = AIService()
     result = await svc.extract_requirements("laptop for gaming")
@@ -73,7 +85,7 @@ async def test_mock_mode_laptop_has_ram_and_price_constraints():
 
 
 @pytest.mark.asyncio
-async def test_mock_mode_non_laptop_has_clarification():
+async def test_mock_mode_non_laptop_has_clarification(mock_mode):
     """Non-laptop brief in mock mode should have clarification_needed non-empty."""
     svc = AIService()
     result = await svc.extract_requirements("something vague and unclear here")
@@ -83,7 +95,7 @@ async def test_mock_mode_non_laptop_has_clarification():
 
 
 @pytest.mark.asyncio
-async def test_mock_mode_non_laptop_general_category():
+async def test_mock_mode_non_laptop_general_category(mock_mode):
     """Non-laptop mock brief returns 'general' product category."""
     svc = AIService()
     result = await svc.extract_requirements("I want something for my home office")
@@ -93,7 +105,7 @@ async def test_mock_mode_non_laptop_general_category():
 
 
 @pytest.mark.asyncio
-async def test_mock_mode_extract_is_awaitable():
+async def test_mock_mode_extract_is_awaitable(mock_mode):
     """extract_requirements must be awaitable (async function)."""
     import inspect
     svc = AIService()
@@ -105,7 +117,7 @@ async def test_mock_mode_extract_is_awaitable():
 
 
 @pytest.mark.asyncio
-async def test_mock_mode_generate_explanation_returns_string():
+async def test_mock_mode_generate_explanation_returns_string(mock_mode):
     """generate_explanation in mock mode must return a non-empty string."""
     svc = AIService()
     reqs = await svc.extract_requirements("laptop under $1000")
@@ -125,7 +137,7 @@ async def test_mock_mode_generate_explanation_returns_string():
 
 
 @pytest.mark.asyncio
-async def test_mock_mode_explanation_mentions_pass_attributes():
+async def test_mock_mode_explanation_mentions_pass_attributes(mock_mode):
     """Mock explanation should reference passing attribute names."""
     svc = AIService()
     reqs = await svc.extract_requirements("laptop under $1000")

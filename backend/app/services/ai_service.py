@@ -15,67 +15,36 @@ from app.schemas.requirements import (
 
 logger = logging.getLogger("proofbuy")
 
-# JSON Schema for ShoppingRequirements used in OpenAI structured output
-_REQUIREMENTS_JSON_SCHEMA: Dict[str, Any] = {
-    "type": "object",
-    "properties": {
-        "product_category": {"type": "string"},
-        "hard_constraints": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "attribute": {"type": "string"},
-                    "operator": {"type": "string"},
-                    "value": {},
-                    "unit": {"type": ["string", "null"]},
-                },
-                "required": ["attribute", "operator", "value"],
-                "additionalProperties": False,
-            },
-        },
-        "soft_preferences": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "attribute": {"type": "string"},
-                    "direction": {"type": "string"},
-                    "weight": {"type": "number"},
-                },
-                "required": ["attribute", "direction", "weight"],
-                "additionalProperties": False,
-            },
-        },
-        "budget_max": {"type": ["number", "null"]},
-        "budget_currency": {"type": "string"},
-        "quantity": {"type": "integer"},
-        "use_case": {"type": ["string", "null"]},
-        "search_query": {"type": "string"},
-        "clarification_needed": {
-            "type": "array",
-            "items": {"type": "string"},
-        },
-    },
-    "required": [
-        "product_category",
-        "hard_constraints",
-        "soft_preferences",
-        "budget_max",
-        "budget_currency",
-        "quantity",
-        "use_case",
-        "search_query",
-        "clarification_needed",
-    ],
-    "additionalProperties": False,
+# Groq uses the OpenAI-compatible chat completions API.
+# Base URL and model are read from settings so they can be overridden via env vars.
+# Groq does not support response_format.type="json_schema" with strict=true.
+# We use response_format.type="json_object" and instruct the model via the system
+# prompt to output valid JSON matching our schema.
+
+_SYSTEM_PROMPT = """You are a precise shopping assistant. Extract structured shopping \
+requirements from the user's brief.
+
+Respond with ONLY a valid JSON object matching this exact schema:
+{
+  "product_category": string,
+  "hard_constraints": [{"attribute": string, "operator": string, "value": number|string, "unit": string|null}],
+  "soft_preferences": [{"attribute": string, "direction": string, "weight": number}],
+  "budget_max": number|null,
+  "budget_currency": string,
+  "quantity": integer,
+  "use_case": string|null,
+  "search_query": string,
+  "clarification_needed": [string]
 }
 
-_SYSTEM_PROMPT = (
-    "You are a precise shopping assistant. Extract structured shopping requirements "
-    "from the user's brief. Output valid JSON only. "
-    "Never set budget_max higher than any amount explicitly stated by the user."
-)
+Rules:
+- operator must be one of: gte, lte, eq, neq, contains
+- direction must be: maximize or minimize
+- weight is 0.0 to 1.0
+- budget_max must NEVER exceed any dollar amount explicitly stated by the user
+- search_query should be a concise product search string for a search engine
+- clarification_needed is empty [] if the brief is clear
+- No extra keys, no markdown, no explanation — JSON only"""
 
 
 def _extract_dollar_amounts(text: str) -> list:
@@ -86,18 +55,30 @@ def _extract_dollar_amounts(text: str) -> list:
 
 
 class AIService:
-    """AI service for extracting shopping requirements and generating explanations."""
+    """AI service using Groq (OpenAI-compatible API)."""
+
+    def _base_url(self) -> str:
+        return settings.ai_base_url
+
+    def _model(self) -> str:
+        return settings.ai_model
+
+    def _headers(self) -> dict:
+        return {
+            "Authorization": f"Bearer {settings.ai_provider_api_key}",
+            "Content-Type": "application/json",
+        }
 
     async def extract_requirements(self, brief_text: str) -> ShoppingRequirements:
         """
         Extract structured ShoppingRequirements from a plain-text brief.
 
-        In mock mode (no API key): returns a deterministic stub.
-        In real mode: calls OpenAI GPT-4o with structured output.
+        Mock mode (no API key): returns a deterministic stub.
+        Real mode: calls Groq with json_object response format.
         """
         if not settings.ai_provider_api_key:
             logger.info(
-                "AI service running in MOCK MODE — set OPENAI_API_KEY for real extractions"
+                "AI service running in MOCK MODE — set AI_PROVIDER_API_KEY for real extractions"
             )
             return self._mock_requirements(brief_text)
 
@@ -133,39 +114,39 @@ class AIService:
         )
 
     async def _real_extract_requirements(self, brief_text: str) -> ShoppingRequirements:
-        """Call OpenAI and parse the structured response."""
+        """Call Groq and parse the JSON response."""
         payload = {
-            "model": "gpt-4o-2024-08-06",
+            "model": self._model(),
             "messages": [
                 {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": brief_text},
             ],
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": "shopping_requirements",
-                    "strict": True,
-                    "schema": _REQUIREMENTS_JSON_SCHEMA,
-                },
-            },
+            "response_format": {"type": "json_object"},
+            "temperature": 0,
         }
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.ai_provider_api_key}",
-                    "Content-Type": "application/json",
-                },
+                f"{self._base_url()}/chat/completions",
+                headers=self._headers(),
                 json=payload,
             )
+
+        if response.status_code == 401:
+            raise AIInvalidOutputError("Groq authentication failed — check AI_PROVIDER_API_KEY")
+        if response.status_code == 429:
+            raise AIInvalidOutputError("Groq rate limit reached — retry later")
+
+        try:
             response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise AIInvalidOutputError(f"Groq API error {response.status_code}: {exc}") from exc
 
         data = response.json()
         choice = data["choices"][0]
 
-        # Check for refusal
-        if choice.get("finish_reason") == "refusal" or choice["message"].get("refusal"):
+        # Check for refusal (Groq mirrors OpenAI finish_reason conventions)
+        if choice.get("finish_reason") == "stop" and choice["message"].get("refusal"):
             raise AIRefusalError("AI model refused to process the request")
 
         raw_content = choice["message"]["content"]
@@ -230,7 +211,7 @@ class AIService:
         requirements: ShoppingRequirements,
         constraint_results: dict,
     ) -> str:
-        """Call OpenAI to generate an evidence-backed explanation."""
+        """Call Groq to generate an evidence-backed explanation."""
         # Only include PASS/FAIL results in context; note UNKNOWNs separately
         known_results = {k: v for k, v in constraint_results.items() if v != "UNKNOWN"}
         unknown_attrs = [k for k, v in constraint_results.items() if v == "UNKNOWN"]
@@ -246,22 +227,20 @@ class AIService:
         )
 
         payload = {
-            "model": "gpt-4o-2024-08-06",
+            "model": self._model(),
             "messages": [
                 {"role": "system", "content": "You are a concise product reviewer."},
                 {"role": "user", "content": prompt},
             ],
             "max_tokens": 150,
+            "temperature": 0.3,
         }
 
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {settings.ai_provider_api_key}",
-                        "Content-Type": "application/json",
-                    },
+                    f"{self._base_url()}/chat/completions",
+                    headers=self._headers(),
                     json=payload,
                 )
                 response.raise_for_status()

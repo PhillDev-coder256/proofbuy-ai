@@ -4,6 +4,15 @@ import pytest
 BRIEF_PAYLOAD = {"brief": "I need a laptop under $1000 with at least 16GB RAM"}
 
 
+@pytest.fixture(autouse=True)
+def force_mock_services(monkeypatch):
+    """Force AI service into mock mode so tests don't make real API calls."""
+    import app.config as cfg
+    monkeypatch.setattr(cfg.settings, "ai_provider_api_key", "")
+    monkeypatch.setattr(cfg.settings, "channel3_api_key", "")
+    monkeypatch.setattr(cfg.settings, "paypal_client_id", "")
+
+
 @pytest.mark.asyncio
 async def test_post_brief_returns_200(async_client):
     response = await async_client.post("/api/v1/shopping/brief", json=BRIEF_PAYLOAD)
