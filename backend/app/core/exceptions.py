@@ -54,6 +54,31 @@ class Channel3ServiceError(ProofBuyException):
         super().__init__(message, status_code=503)
 
 
+class PayPalAuthError(ProofBuyException):
+    def __init__(self, message: str):
+        super().__init__(message, status_code=502)
+
+
+class PayPalOrderNotApprovedError(ProofBuyException):
+    def __init__(self, message: str):
+        super().__init__(message, status_code=422)
+
+
+class PayPalInstrumentDeclinedError(ProofBuyException):
+    def __init__(self, message: str):
+        super().__init__(message, status_code=402)
+
+
+class PayPalDuplicateCaptureError(ProofBuyException):
+    def __init__(self, message: str):
+        super().__init__(message, status_code=409)
+
+
+class PayPalServiceError(ProofBuyException):
+    def __init__(self, message: str):
+        super().__init__(message, status_code=502)
+
+
 def add_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ProofBuyException)
     async def proofbuy_exception_handler(request: Request, exc: ProofBuyException):
