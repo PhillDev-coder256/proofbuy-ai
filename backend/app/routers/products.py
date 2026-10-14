@@ -97,6 +97,7 @@ async def get_products_for_session(
 
         response_items.append(
             RankedProduct(
+                id=str(product_row.id),
                 product=ranked_product,
                 constraint_results=constraint_results,
                 ranking_score=ranking_score,

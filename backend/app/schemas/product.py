@@ -44,6 +44,7 @@ class NormalizedProduct(BaseModel):
 
 
 class RankedProduct(BaseModel):
+    id: Optional[str] = None
     product: dict  # raw product dict from channel3
     constraint_results: Dict[str, str]  # attribute -> ConstraintResult value
     ranking_score: float
