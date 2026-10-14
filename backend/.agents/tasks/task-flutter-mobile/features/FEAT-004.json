@@ -1,0 +1,36 @@
+{
+  "id": "FEAT-004",
+  "type": "feat",
+  "description": "Implement the PayPal checkout flow: PurchaseReviewScreen, CheckoutScreen (creates order + opens url_launcher + waits for user tap + captures), CheckoutReturnScreen, and TransactionResultScreen. This is the most security-sensitive FEAT. The critical invariant: NEVER display payment success until backend returns verified=true from POST /api/v1/checkout/capture. Depends on FEAT-001, FEAT-002, FEAT-003. FEAT-005 is independent.",
+  "status": "pending",
+  "steps": [
+    "Step 1 — Implement mobile/lib/features/purchase_review/purchase_review_screen.dart. Replace the stub. Receives a RankedProduct via GoRouter extras. Show: product name (large bold), formatted price with currency, a section 'Constraint Verification' listing each entry in constraintResults as a row with ConstraintBadge. If any constraint result is 'UNKNOWN', show a yellow warning banner: 'The following attributes could not be verified: [comma-separated list of UNKNOWN attribute names]'. Show estimated total as the product price. Two buttons: 'Confirm and Pay with PayPal' (ElevatedButton, blue) and 'Cancel' (TextButton, pops back). 'Confirm and Pay with PayPal' navigates to '/checkout/${product.productResultId}?orderId=' (orderId is empty at this point — it will be created by CheckoutScreen). Pass the full RankedProduct as GoRouter extras.",
+
+    "Step 2 — Create mobile/lib/features/checkout/checkout_provider.dart. Define a CheckoutState Freezed union with variants: CheckoutIdle, CheckoutCreatingOrder, CheckoutAwaitingApproval({required String orderId, required String approvalUrl, required String purchaseId}), CheckoutCapturing({required String orderId, required String purchaseId}), CheckoutSuccess({required String transactionId}), CheckoutFailure({required String message}). Define CheckoutNotifier as a Riverpod Notifier<CheckoutState> (use StateNotifier pattern or AsyncNotifier — prefer Notifier<CheckoutState> with @riverpod). Implement: createOrder(String productResultId): set state to CheckoutCreatingOrder, call checkoutRepositoryProvider.createCheckout(productResultId), on success set state to CheckoutAwaitingApproval with the returned orderId/approvalUrl/purchaseId, on AppException set state to CheckoutFailure(message: e.message). captureOrder(String orderId, String purchaseId): set state to CheckoutCapturing, call checkoutRepositoryProvider.captureCheckout(orderId, purchaseId), on success: if response.verified == true set state to CheckoutSuccess(transactionId: response.transactionId), if response.verified == false set state to CheckoutFailure(message: 'Payment could not be verified. Please contact support.'). NEVER set CheckoutSuccess unless verified is explicitly true.",
+
+    "Step 3 — Implement mobile/lib/features/checkout/checkout_screen.dart. Replace the stub. This is a ConsumerStatefulWidget that receives purchaseId and productResultId via constructor (passed through route params and GoRouter extras). On initState (or using ref.listen), immediately call checkoutNotifier.createOrder(productResultId) to create the PayPal order. Show states: CheckoutIdle/CheckoutCreatingOrder: LoadingWidget('Creating PayPal order...'). CheckoutAwaitingApproval: Show a card with the order summary, an ElevatedButton 'Open PayPal to Approve' that calls `launchUrl(Uri.parse(state.approvalUrl), mode: LaunchMode.externalApplication)`, and a TextButton 'I've completed payment' that calls checkoutNotifier.captureOrder(state.orderId, state.purchaseId). Do NOT auto-detect return or auto-call capture. The user must tap 'I've completed payment'. CheckoutCapturing: LoadingWidget('Verifying payment...'). CheckoutSuccess: navigate immediately to '/transaction/${state.transactionId}' via context.go(). CheckoutFailure: Show ProofBuyErrorWidget with message and a 'Try Again' button that re-calls createOrder. Also add url_launcher permission: ensure url_launcher is configured in AndroidManifest by adding <queries> block in mobile/android/app/src/main/AndroidManifest.xml with <intent> for https and http schemes.",
+
+    "Step 4 — Implement mobile/lib/features/checkout/checkout_return_screen.dart. Replace the stub. This screen is shown when the deep link proofbuy://checkout/return is triggered. Display a message 'Returning from PayPal...' and a button 'Continue to confirmation'. Note: the actual capture happens in CheckoutScreen, not here. This screen just bridges the return. On 'Continue' tap, navigate back to the CheckoutScreen via context.pop() (assuming CheckoutScreen is still in the stack) or navigate to '/brief' if no screen is in stack.",
+
+    "Step 5 — Implement mobile/lib/features/transaction_result/transaction_result_screen.dart. Replace the stub. Receives purchaseId (the transactionId from CheckoutCaptureResponse). Uses a Riverpod FutureProvider that calls transactionsRepositoryProvider.getTransaction(purchaseId). Show: On loading: LoadingWidget. On error: ProofBuyErrorWidget with retry. On data: A success icon (Icons.check_circle, green, large), 'Payment Verified!' heading, transaction id, status, verified_at date formatted with intl DateFormat. Two buttons: 'View History' → navigates to '/history', 'Back to Shopping' → navigates to '/brief'. IMPORTANT: This screen only receives a transactionId when CheckoutScreen.captureOrder returned verified=true. Do not call this screen's API if the transaction was not verified.",
+
+    "Step 6 — Write widget tests in mobile/test/features/checkout_test.dart. Mock CheckoutRepository using mocktail. Tests: (1) Initial state shows LoadingWidget while creating order. (2) CheckoutAwaitingApproval state shows the approval button and 'I've completed payment' button. (3) CheckoutCapturing state shows LoadingWidget. (4) CheckoutFailure with verified=false shows error message NOT a success message. (5) Only CheckoutSuccess state triggers navigation to transaction screen."
+  ],
+  "acceptance_criteria": [
+    "PurchaseReviewScreen shows UNKNOWN warning banner when any constraint result is UNKNOWN",
+    "CheckoutScreen calls createOrder on load and shows approval URL button",
+    "CheckoutScreen never navigates to success until backend returns verified=true",
+    "CheckoutScreen waits for user tap on 'I've completed payment' before calling capture",
+    "TransactionResultScreen shows verified transaction data",
+    "`flutter analyze` 0 errors",
+    "checkout_test.dart tests pass including the verified=false → error path"
+  ],
+  "verification": [
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && dart run build_runner build --delete-conflicting-outputs",
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter analyze",
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter test",
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter build apk --debug"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

@@ -1,0 +1,7 @@
+{
+  "task_id": "task-flutter-mobile",
+  "task_description": "Build the ProofBuy AI Flutter mobile application: scaffold the project, wire up core infrastructure (networking, routing, theme, Riverpod), implement all product/shopping features, implement the PayPal checkout flow with url_launcher + server-side capture verification, and produce a passing debug APK.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002", "FEAT-003", "FEAT-004", "FEAT-005"],
+  "blocked_reason": null
+}

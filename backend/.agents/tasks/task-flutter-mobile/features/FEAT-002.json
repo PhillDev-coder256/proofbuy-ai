@@ -1,0 +1,47 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement all Freezed shared data models and the API service layer. This produces the typed Dart models that mirror the backend schemas (read from context.json) and the repository classes that make HTTP calls. FEAT-002 depends on FEAT-001 (project scaffold and pubspec must exist). FEAT-003, FEAT-004, and FEAT-005 all depend on this FEAT.",
+  "status": "pending",
+  "steps": [
+    "Step 1 — Create mobile/lib/shared/models/shopping_session.dart. Define a Freezed class ShoppingSession with fields: id (String), briefText (String), requirementsJson (Map<String,dynamic>?), status (String), createdAt (DateTime), updatedAt (DateTime). Add @JsonSerializable() and fromJson/toJson. The JSON field name for briefText is 'brief_text', requirementsJson is 'requirements_json', createdAt is 'created_at', updatedAt is 'updated_at'. Use @JsonKey annotations.",
+
+    "Step 2 — Create mobile/lib/shared/models/ranked_product.dart. The backend GET /api/v1/products/{session_id} returns a list where each item is: {product: dict, constraint_results: Map<String,String>, ranking_score: double, ranking_confidence: double, explanation: String?}. The 'product' dict contains: channel3_product_id (String?), name (String), price (double?), currency (String?), merchant (String?), source_url (String?), image_url (String?), specs (Map<String,dynamic>?), retrieved_at (String?). Define two Freezed classes: ProductData (maps the inner product dict) and RankedProduct (maps the outer object with productData, constraintResults Map<String,String>, rankingScore double, rankingConfidence double, explanation String?). Use snake_case @JsonKey annotations throughout. The JSON key for productData is 'product', constraintResults is 'constraint_results', rankingScore is 'ranking_score', rankingConfidence is 'ranking_confidence'. Export both from the same file.",
+
+    "Step 3 — Create mobile/lib/shared/models/purchase_record.dart. Freezed class PurchaseRecord with fields: id (String), sessionId (String), productResultId (String), amount (double), currency (String), status (String), paypalOrderId (String?), idempotencyKey (String?), createdAt (DateTime), updatedAt (DateTime). JSON keys in snake_case via @JsonKey.",
+
+    "Step 4 — Create mobile/lib/shared/models/app_transaction.dart (NOT transaction.dart — avoid conflict with any dart:core name). Freezed class AppTransaction with fields: id (String), purchaseRecordId (String), paypalCaptureId (String?), status (String), verifiedAt (DateTime?), createdAt (DateTime). JSON keys in snake_case. Export as AppTransaction.",
+
+    "Step 5 — Create mobile/lib/shared/models/checkout_models.dart (not Freezed — simple classes since no deep equality needed, but use Freezed for consistency). Define three Freezed classes: CheckoutCreateRequest (productResultId String, sessionId String? = null — JSON keys product_result_id, session_id), CheckoutCreateResponse (orderId String, approvalUrl String, purchaseId String — JSON keys order_id, approval_url, purchase_id), CheckoutCaptureRequest (orderId String, purchaseId String — JSON keys order_id, purchase_id), CheckoutCaptureResponse (transactionId String, status String, verified bool — JSON keys transaction_id, status, verified).",
+
+    "Step 6 — Create mobile/lib/shared/models/history_item.dart. Freezed class HistoryItem wrapping the PurchaseHistoryItem backend shape: purchaseRecord (PurchaseRecord), product (ProductData?), session (ShoppingSession?). JSON keys purchase_record, product, session.",
+
+    "Step 7 — Run `dart run build_runner build --delete-conflicting-outputs` in mobile/. This generates .freezed.dart and .g.dart files for all models created in steps 1-6. Fix any build_runner errors before proceeding.",
+
+    "Step 8 — Create mobile/lib/core/networking/shopping_repository.dart. A class ShoppingRepository that takes a Dio instance. Implement: Future<ShoppingSession> submitBrief(String brief) — POST /api/v1/shopping/brief body {brief: brief}, parse ShoppingBriefResponse (session_id, status, message, requirements), return a ShoppingSession built from the response. Future<ShoppingSession> getSession(String sessionId) — GET /api/v1/shopping/{sessionId}, parse ShoppingSessionResponse JSON, return ShoppingSession.fromJson. Let DioException propagate (the api_client interceptor already maps them to AppException).",
+
+    "Step 9 — Create mobile/lib/core/networking/products_repository.dart. A class ProductsRepository that takes a Dio instance. Implement: Future<List<RankedProduct>> getProducts(String sessionId) — GET /api/v1/products/{sessionId}, parse JSON list, return List<RankedProduct>.fromJson each item.",
+
+    "Step 10 — Create mobile/lib/core/networking/checkout_repository.dart. A class CheckoutRepository that takes a Dio instance. Implement: Future<CheckoutCreateResponse> createCheckout(String productResultId, {String? sessionId}) — POST /api/v1/checkout/create. Future<CheckoutCaptureResponse> captureCheckout(String orderId, String purchaseId) — POST /api/v1/checkout/capture. Parse responses using CheckoutCreateResponse.fromJson and CheckoutCaptureResponse.fromJson.",
+
+    "Step 11 — Create mobile/lib/core/networking/transactions_repository.dart. A class TransactionsRepository that takes a Dio instance. Implement: Future<AppTransaction> getTransaction(String purchaseId) — GET /api/v1/transactions/{purchaseId}. Future<List<HistoryItem>> getHistory() — GET /api/v1/history, parse list of HistoryItem.",
+
+    "Step 12 — Create Riverpod providers for all repositories in mobile/lib/core/networking/repositories_providers.dart. Use @riverpod annotation: shoppingRepository returns ShoppingRepository(ref.watch(apiClientProvider)), same pattern for productsRepository, checkoutRepository, transactionsRepository. These all depend on the apiClientProvider from api_client.dart.",
+
+    "Step 13 — Run `dart run build_runner build --delete-conflicting-outputs` again to generate the .g.dart for the new @riverpod providers. Then run `flutter analyze` and fix any errors."
+  ],
+  "acceptance_criteria": [
+    "All .freezed.dart and .g.dart files generate without errors",
+    "`flutter analyze` reports 0 errors in mobile/",
+    "`flutter test` passes",
+    "ShoppingSession, RankedProduct, ProductData, PurchaseRecord, AppTransaction, CheckoutCreateResponse, CheckoutCaptureResponse, HistoryItem are all importable and constructable in test code"
+  ],
+  "verification": [
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && dart run build_runner build --delete-conflicting-outputs",
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter analyze",
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter test",
+    "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter build apk --debug"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

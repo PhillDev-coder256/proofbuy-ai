@@ -21,7 +21,6 @@ from app.core.exceptions import (
     ValidationError,
     PayPalInstrumentDeclinedError,
     PayPalServiceError,
-    PayPalDuplicateCaptureError,
 )
 
 router = APIRouter(prefix="/api/v1/checkout", tags=["checkout"])
@@ -57,11 +56,11 @@ async def create_checkout(
     )
     existing_purchase = existing_result.scalars().first()
     if existing_purchase and existing_purchase.paypal_order_id:
+        # Use the service's get_approval_url so sandbox vs live hostname is correct
+        approval_url = paypal_service.get_approval_url(existing_purchase.paypal_order_id)
         return CheckoutCreateResponse(
             order_id=existing_purchase.paypal_order_id,
-            approval_url=(
-                f"https://www.sandbox.paypal.com/checkoutnow?token={existing_purchase.paypal_order_id}"
-            ),
+            approval_url=approval_url,
             purchase_id=str(existing_purchase.id),
         )
 
@@ -130,6 +129,8 @@ async def capture_checkout(
             )
 
     # d. Capture via PayPal
+    # Note: PayPalService handles ORDER_ALREADY_CAPTURED internally and returns a
+    # PayPalCaptureResult — it never raises PayPalDuplicateCaptureError.
     try:
         capture_result = await paypal_service.capture_order(request.order_id)
     except (PayPalInstrumentDeclinedError, PayPalServiceError):
@@ -137,32 +138,22 @@ async def capture_checkout(
         purchase.updated_at = datetime.now(timezone.utc)
         await db.commit()
         raise
-    except PayPalDuplicateCaptureError:
-        purchase.status = "captured"
-        purchase.updated_at = datetime.now(timezone.utc)
-        await db.commit()
-        txn_result = await db.execute(
-            select(Transaction).where(
-                Transaction.purchase_record_id == str(purchase.id)
-            )
-        )
-        transaction = txn_result.scalars().first()
-        if transaction:
-            return CheckoutCaptureResponse(
-                transaction_id=str(transaction.id),
-                status="captured",
-                verified=True,
-            )
-        raise
 
     # e/f. Create Transaction and update purchase status
+    # Store a minimal audit record — never the full PayPal response body
+    audit_json = {
+        "capture_id": capture_result.capture_id,
+        "status": capture_result.status,
+        "amount": capture_result.amount,
+        "currency": capture_result.currency,
+    }
     if capture_result.verified:
         transaction = Transaction(
             purchase_record_id=str(purchase.id),
             paypal_capture_id=capture_result.capture_id,
             status="captured",
             verified_at=datetime.now(timezone.utc),
-            raw_capture_json=None,
+            raw_capture_json=audit_json,
         )
         db.add(transaction)
         purchase.status = "captured"
@@ -173,7 +164,7 @@ async def capture_checkout(
             paypal_capture_id=capture_result.capture_id,
             status="failed",
             verified_at=None,
-            raw_capture_json=None,
+            raw_capture_json=audit_json,
         )
         db.add(transaction)
 

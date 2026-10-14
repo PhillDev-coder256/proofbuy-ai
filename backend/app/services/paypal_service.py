@@ -214,6 +214,16 @@ class PayPalService:
             currency=cap_amount_obj.get("currency_code"),
         )
 
+    def get_approval_url(self, order_id: str) -> str:
+        """Return the buyer-facing approval URL for a PayPal order ID.
+
+        Uses the configured environment's hostname so sandbox and live orders
+        both resolve to the correct domain.
+        """
+        if "sandbox" in self._base_url:
+            return f"https://www.sandbox.paypal.com/checkoutnow?token={order_id}"
+        return f"https://www.paypal.com/checkoutnow?token={order_id}"
+
     async def verify_order(self, order_id: str) -> PayPalOrderStatus:
         if self._mock_mode:
             return PayPalOrderStatus(

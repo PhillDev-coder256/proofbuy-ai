@@ -1,0 +1,24 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": 1,
+      "severity": "MEDIUM",
+      "label": "Currency None-masking re-introduced at DB layer",
+      "detail": "products.py line 77 applies .get(\"currency\", \"USD\") when constructing the ProductResult row. Products with currency=None are stored with \"USD\" in the DB even though the in-memory dict correctly carries None. Audit whether any downstream read path uses ProductResult.currency for constraint evaluation; align the persisted value with the in-memory representation or use an explicit sentinel."
+    },
+    {
+      "id": 2,
+      "severity": "MEDIUM",
+      "label": "Null price causes DB integrity error at runtime",
+      "detail": "ProductResult.price is Numeric(10,2), nullable=False. If Channel3 returns a product with no price, price=None passes through the wrapper and the router inserts NULL into a NOT NULL column, raising an IntegrityError on db.commit() after the loop has partially executed. Filter out data_complete=False products (or products with price=None) before the persistence loop."
+    },
+    {
+      "id": 3,
+      "severity": "LOW",
+      "label": "Dead data_complete argument in _normalize()",
+      "detail": "_normalize() passes data_complete=False to NormalizedProduct(...), but the model_validator always overwrites it. Remove the argument — the schema default is False and the comment already documents the validator owns it."
+    }
+  ],
+  "reviewDoc": "/Users/testbedmac1/philldevcoder/projects/proofBuy-AI/backend/.agents/tasks/channel3-review.md"
+}

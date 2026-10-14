@@ -1,0 +1,10 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "findings": [
+    "Dead `PayPalDuplicateCaptureError` catch in router — `capture_order` never raises it; duplicates are silently recovered in the service. The `except PayPalDuplicateCaptureError` block in `checkout.py` is unreachable. Either raise the exception from the service or remove the dead handler from the router.",
+    "Hard-coded sandbox approval URL in idempotent re-create path — the `/create` endpoint reconstructs the approval URL as `https://www.sandbox.paypal.com/checkoutnow?token=...` regardless of `paypal_environment`. In production this sends the buyer to the sandbox. Store the approval URL on `PurchaseRecord` at create time and return it directly.",
+    "`raw_capture_json` always `None` — both transaction creation branches set `raw_capture_json=None`, discarding the audit record the spec required. Populate it from `capture_result` fields (`capture_id`, `status`, `amount`, `currency`).",
+    "No test for idempotent re-create branch — there is no test asserting that a second `/create` call returns the stored `paypal_order_id` without calling PayPal again. The hard-coded sandbox URL bug is invisible to the test suite as a result."
+  ],
+  "reviewDoc": "/Users/testbedmac1/philldevcoder/projects/proofBuy-AI/backend/.agents/tasks/paypal-review.md"
+}

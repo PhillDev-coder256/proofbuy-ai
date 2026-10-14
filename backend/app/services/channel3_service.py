@@ -114,7 +114,7 @@ class Channel3Service:
             image_url=image_url,
             specs=specs if specs is not None else {},
             retrieved_at=datetime.now(timezone.utc),
-            data_complete=False,  # computed by NormalizedProduct.compute_data_complete model_validator
+            # data_complete is computed by NormalizedProduct.compute_data_complete model_validator
         )
 
     async def search_products(

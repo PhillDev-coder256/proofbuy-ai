@@ -53,6 +53,16 @@ async def get_products_for_session(
         ranking_score = ranked_product.get("ranking_score", 0.5)
         ranking_confidence = ranked_product.get("ranking_confidence", 1.0)
 
+        # Skip products with no price — cannot persist (price column is NOT NULL)
+        # and cannot create a valid checkout. Log and continue.
+        if ranked_product.get("price") is None:
+            import logging
+            logging.getLogger("proofbuy").warning(
+                "Skipping product '%s' — price is None (data_complete=False)",
+                ranked_product.get("channel3_product_id"),
+            )
+            continue
+
         # Generate explanation for top 3
         explanation: Optional[str] = None
         if i < 3:
@@ -69,12 +79,13 @@ async def get_products_for_session(
         else:
             retrieved_at = retrieved_at_raw
 
+        # Pass currency as-is (None if unknown) — do NOT default to "USD"
         product_row = ProductResult(
             session_id=session_id,
             channel3_product_id=ranked_product.get("channel3_product_id"),
             name=ranked_product["name"],
             price=ranked_product["price"],
-            currency=ranked_product.get("currency", "USD"),
+            currency=ranked_product.get("currency"),
             merchant=ranked_product.get("merchant"),
             specs_json=ranked_product.get("specs_json"),
             source_url=ranked_product.get("source_url"),
