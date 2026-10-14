@@ -91,6 +91,20 @@ async def test_auth_error_raises_correctly(httpx_mock):
         await svc.search_products('laptop')
 
 
+@pytest.mark.asyncio
+async def test_service_error_raises_on_5xx(httpx_mock):
+    from app.services.channel3_service import Channel3Service
+    from app.core.exceptions import Channel3ServiceError
+    httpx_mock.add_response(
+        method='POST',
+        url='https://api.trychannel3.com/v1/search',
+        status_code=500,
+    )
+    svc = Channel3Service(api_key='test-key-abc')
+    with pytest.raises(Channel3ServiceError):
+        await svc.search_products('laptop')
+
+
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_live_integration():

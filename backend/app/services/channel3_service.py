@@ -104,12 +104,6 @@ class Channel3Service:
         brands = raw.get("brands", [None])
         merchant = brands[0] if brands else None
 
-        data_complete = (
-            price is not None
-            and currency is not None
-            and bool(name)
-        )
-
         return NormalizedProduct(
             channel3_product_id=raw["id"],
             name=name,
@@ -120,7 +114,7 @@ class Channel3Service:
             image_url=image_url,
             specs=specs if specs is not None else {},
             retrieved_at=datetime.now(timezone.utc),
-            data_complete=data_complete,
+            data_complete=False,  # computed by NormalizedProduct.compute_data_complete model_validator
         )
 
     async def search_products(
@@ -210,8 +204,8 @@ async def search_products(query: str, session_id: str) -> list:
         {
             "channel3_product_id": p.channel3_product_id,
             "name": p.name,
-            "price": p.price if p.price is not None else 0.0,
-            "currency": p.currency or "USD",
+            "price": p.price,
+            "currency": p.currency,
             "merchant": p.merchant,
             "specs_json": p.specs,
             "source_url": p.source_url,
