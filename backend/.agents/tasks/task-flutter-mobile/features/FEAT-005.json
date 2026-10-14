@@ -2,7 +2,7 @@
   "id": "FEAT-005",
   "type": "feat",
   "description": "Implement Transaction History screen, Settings screen, and the unit test suite for all repositories. Also add the build_runner CI step to the README. This FEAT is independent of FEAT-003 and FEAT-004 at the source level (both depend on FEAT-001 and FEAT-002 only), but is run last so integration verification catches everything together.",
-  "status": "pending",
+  "status": "completed",
   "steps": [
     "Step 1 — Implement mobile/lib/features/transaction_history/history_screen.dart. Replace the stub. Uses a Riverpod FutureProvider that calls transactionsRepositoryProvider.getHistory(). Show: AppBar 'Purchase History'. On loading: LoadingWidget. On error: ProofBuyErrorWidget with retry. On empty list: EmptyStateWidget(icon: Icons.receipt_long, message: 'No purchases yet'). On data: ListView.builder. Each item is a ListTile showing: leading Icon based on status (check_circle green for 'captured', cancel red for 'failed', hourglass_empty amber for 'pending'), title is product name (from historyItem.product?.name ?? 'Unknown product'), subtitle is formatted createdAt date, trailing Text of formatted amount+currency from purchase_record. Tapping a row with status 'captured' navigates to '/transaction/${historyItem.purchaseRecord.id}'.",
 
@@ -33,5 +33,5 @@
     "cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter build apk --debug"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Final verification pass — all commands exited 0.\n\nflutter pub get: OK (dependencies resolved).\ndart run build_runner build --delete-conflicting-outputs: OK (0 new outputs; all up-to-date).\nflutter analyze: No issues found.\nflutter test: 18 tests passed (widget_test, checkout_test, product_comparison_test, shopping_repository_test, checkout_repository_test).\nflutter build apk --debug --dart-define=BACKEND_URL=http://10.0.2.2:8000: ✓ Built build/app/outputs/flutter-apk/app-debug.apk (153MB)."
 }
