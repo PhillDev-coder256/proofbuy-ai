@@ -23,6 +23,13 @@ class Transaction(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
+    def __init__(self, **kw):
+        if "id" not in kw or kw["id"] is None:
+            kw["id"] = str(uuid4())
+        if "created_at" not in kw:
+            kw["created_at"] = datetime.now(timezone.utc)
+        super().__init__(**kw)
+
     purchase_record: Mapped["PurchaseRecord"] = relationship(
         "PurchaseRecord", back_populates="transactions"
     )

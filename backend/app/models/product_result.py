@@ -29,6 +29,15 @@ class ProductResult(Base):
         DateTime, default=lambda: datetime.now(timezone.utc)
     )
 
+    def __init__(self, **kw):
+        # SQLAlchemy mapped_column default= fires on INSERT, not at Python object
+        # construction — generate IDs eagerly so they are available before flush/commit.
+        if "id" not in kw or kw["id"] is None:
+            kw["id"] = str(uuid4())
+        if "created_at" not in kw:
+            kw["created_at"] = datetime.now(timezone.utc)
+        super().__init__(**kw)
+
     session: Mapped["ShoppingSession"] = relationship(
         "ShoppingSession", back_populates="product_results"
     )

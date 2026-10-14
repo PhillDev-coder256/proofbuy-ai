@@ -24,6 +24,17 @@ class ShoppingSession(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
+    def __init__(self, **kw):
+        if "id" not in kw or kw["id"] is None:
+            kw["id"] = str(uuid4())
+        if "created_at" not in kw:
+            kw["created_at"] = datetime.now(timezone.utc)
+        if "updated_at" not in kw:
+            kw["updated_at"] = datetime.now(timezone.utc)
+        if "status" not in kw:
+            kw["status"] = "pending"
+        super().__init__(**kw)
+
     product_results: Mapped[List["ProductResult"]] = relationship(
         "ProductResult", back_populates="session"
     )

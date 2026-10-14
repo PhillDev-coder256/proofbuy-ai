@@ -32,6 +32,19 @@ class PurchaseRecord(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
+    def __init__(self, **kw):
+        if "id" not in kw or kw["id"] is None:
+            kw["id"] = str(uuid4())
+        if "created_at" not in kw:
+            kw["created_at"] = datetime.now(timezone.utc)
+        if "updated_at" not in kw:
+            kw["updated_at"] = datetime.now(timezone.utc)
+        if "status" not in kw:
+            kw["status"] = "pending"
+        if "currency" not in kw:
+            kw["currency"] = "USD"
+        super().__init__(**kw)
+
     session: Mapped["ShoppingSession"] = relationship(
         "ShoppingSession", back_populates="purchase_records"
     )

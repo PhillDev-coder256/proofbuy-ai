@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import List, Optional
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,8 +80,13 @@ async def get_products_for_session(
         else:
             retrieved_at = retrieved_at_raw
 
+        # Generate UUID explicitly before object creation — used in the response
+        # and also passed as id= to ensure consistency.
+        product_id = str(uuid4())
+
         # Pass currency as-is (None if unknown) — do NOT default to "USD"
         product_row = ProductResult(
+            id=product_id,
             session_id=session_id,
             channel3_product_id=ranked_product.get("channel3_product_id"),
             name=ranked_product["name"],
@@ -97,7 +103,7 @@ async def get_products_for_session(
 
         response_items.append(
             RankedProduct(
-                id=str(product_row.id),
+                id=product_id,
                 product=ranked_product,
                 constraint_results=constraint_results,
                 ranking_score=ranking_score,

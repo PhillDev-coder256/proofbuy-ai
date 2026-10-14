@@ -10,8 +10,8 @@ class ProductResultResponse(BaseModel):
     id: str
     session_id: str
     name: str
-    price: float
-    currency: str
+    price: Optional[float] = None      # nullable — Channel3 may not return a price
+    currency: Optional[str] = None     # nullable — Channel3 may not return a currency
     merchant: Optional[str] = None
     specs_json: Optional[dict] = None
     source_url: Optional[str] = None
