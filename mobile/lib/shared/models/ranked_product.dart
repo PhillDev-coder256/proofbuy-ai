@@ -4,7 +4,7 @@ part 'ranked_product.freezed.dart';
 part 'ranked_product.g.dart';
 
 @freezed
-class ProductData with _$ProductData {
+abstract class ProductData with _$ProductData {
   const factory ProductData({
     @JsonKey(name: 'channel3_product_id') String? channel3ProductId,
     required String name,
@@ -22,7 +22,7 @@ class ProductData with _$ProductData {
 }
 
 @freezed
-class RankedProduct with _$RankedProduct {
+abstract class RankedProduct with _$RankedProduct {
   const factory RankedProduct({
     @JsonKey(name: 'product') required ProductData productData,
     @JsonKey(name: 'constraint_results')

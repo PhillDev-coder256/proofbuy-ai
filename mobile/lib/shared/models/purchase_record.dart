@@ -4,7 +4,7 @@ part 'purchase_record.freezed.dart';
 part 'purchase_record.g.dart';
 
 @freezed
-class PurchaseRecord with _$PurchaseRecord {
+abstract class PurchaseRecord with _$PurchaseRecord {
   const factory PurchaseRecord({
     required String id,
     @JsonKey(name: 'session_id') required String sessionId,

@@ -4,7 +4,7 @@ part 'shopping_session.freezed.dart';
 part 'shopping_session.g.dart';
 
 @freezed
-class ShoppingSession with _$ShoppingSession {
+abstract class ShoppingSession with _$ShoppingSession {
   const factory ShoppingSession({
     required String id,
     @JsonKey(name: 'brief_text') required String briefText,
