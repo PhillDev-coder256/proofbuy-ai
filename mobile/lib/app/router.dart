@@ -2,10 +2,13 @@ import 'package:go_router/go_router.dart';
 
 import '../features/checkout/checkout_return_screen.dart';
 import '../features/checkout/checkout_screen.dart';
+import '../features/auth/signup_screen.dart';
+import '../features/auth/signin_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/product_comparison/product_comparison_screen.dart';
 import '../features/product_details/product_details_screen.dart';
 import '../features/product_search/product_search_screen.dart';
+import '../features/product_search/review_requirements_screen.dart';
 import '../features/purchase_review/purchase_review_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/shopping_brief/shopping_brief_screen.dart';
@@ -39,12 +42,26 @@ final appRouter = GoRouter(
       builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(
+      path: '/signup',
+      builder: (context, state) => const SignUpScreen(),
+    ),
+    GoRoute(
+      path: '/signin',
+      builder: (context, state) => const SignInScreen(),
+    ),
+    GoRoute(
       path: '/brief',
       builder: (context, state) => const ShoppingBriefScreen(),
     ),
     GoRoute(
       path: '/loading/:sessionId',
       builder: (context, state) => ProductSearchScreen(
+        sessionId: state.pathParameters['sessionId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/review-requirements/:sessionId',
+      builder: (context, state) => ReviewRequirementsScreen(
         sessionId: state.pathParameters['sessionId']!,
       ),
     ),

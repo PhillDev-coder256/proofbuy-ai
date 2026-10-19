@@ -20,6 +20,7 @@ dependencies:
   url_launcher: ^6.3.1
   intl: ^0.19.0
   shared_preferences: ^2.3.3
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -35,10 +36,5 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/logo.png
-    - assets/icons/logo_40.png
-    - assets/icons/logo_40@2x.png
-    - assets/icons/logo_40@3x.png
-    - assets/icons/logo_hero.png
-    - assets/icons/logo_hero@2x.png
-    - assets/icons/logo_hero@3x.png
+    - assets/images/
+    - assets/icons/

@@ -14,12 +14,12 @@ logger = logging.getLogger("proofbuy.channel3")
 MOCK_PRODUCTS: List[NormalizedProduct] = [
     NormalizedProduct(
         channel3_product_id="C3-MOCK-001",
-        name="Dell XPS 15",
+        name="Dell XPS 15 9530",
         price=999.99,
         currency="USD",
         merchant="Dell Official Store",
         source_url="https://www.dell.com/en-us/shop/laptops/xps-15-laptop",
-        image_url="https://i.dell.com/xps-15.jpg",
+        image_url="https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=400&q=80",
         specs={
             "ram": "16GB DDR5",
             "storage": "512GB SSD",
@@ -27,18 +27,20 @@ MOCK_PRODUCTS: List[NormalizedProduct] = [
             "display": '15.6" OLED 3.5K',
             "battery": "86Wh",
             "weight_kg": 1.86,
+            "features": ["Thunderbolt 4", "Wi-Fi 6E", "Backlit keyboard"],
+            "description": "The Dell XPS 15 combines a stunning OLED display with powerful Intel Core i7 performance, making it ideal for creative professionals and power users.",
         },
-        retrieved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        retrieved_at=datetime(2026, 10, 1, tzinfo=timezone.utc),
         data_complete=True,
     ),
     NormalizedProduct(
         channel3_product_id="C3-MOCK-002",
-        name="MacBook Pro 16",
+        name="MacBook Pro 16 M3 Pro",
         price=1299.99,
         currency="USD",
-        merchant="Apple",
+        merchant="Apple Store",
         source_url="https://www.apple.com/shop/buy-mac/macbook-pro/16-inch",
-        image_url="https://store.storeimages.cdn-apple.com/macbook-pro-16.jpg",
+        image_url="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&q=80",
         specs={
             "ram": "18GB Unified Memory",
             "storage": "512GB SSD",
@@ -46,27 +48,31 @@ MOCK_PRODUCTS: List[NormalizedProduct] = [
             "display": '16.2" Liquid Retina XDR',
             "battery": "100Wh",
             "weight_kg": 2.14,
+            "features": ["MagSafe charging", "HDMI port", "SD card slot"],
+            "description": "The MacBook Pro 16 with M3 Pro delivers exceptional performance and battery life in a premium aluminium chassis.",
         },
-        retrieved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        retrieved_at=datetime(2026, 10, 1, tzinfo=timezone.utc),
         data_complete=True,
     ),
     NormalizedProduct(
         channel3_product_id="C3-MOCK-003",
-        name="Framework Laptop 13",
+        name="Lenovo ThinkPad X1 Carbon Gen 11",
         price=849.00,
         currency="USD",
-        merchant="Framework",
-        source_url="https://frame.work/products/laptop-13-gen-intel",
-        image_url="https://frame.work/laptop-13.jpg",
+        merchant="Lenovo",
+        source_url="https://www.lenovo.com/us/en/laptops/thinkpad/thinkpad-x1/",
+        image_url="https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=400&q=80",
         specs={
-            "ram": "16GB DDR5",
+            "ram": "16GB LPDDR5",
             "storage": "512GB SSD",
-            "processor": "Intel Core i5-1340P",
-            "display": '13.5" IPS',
+            "processor": "Intel Core i5-1335U",
+            "display": '14" IPS 1920x1200',
             "battery_life": None,
-            "weight_kg": None,
+            "weight_kg": 1.12,
+            "features": ["MIL-SPEC durability", "Fingerprint reader", "IR camera"],
+            "description": "The ThinkPad X1 Carbon is the ultimate business ultrabook — incredibly light, durable, and packed with security features.",
         },
-        retrieved_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        retrieved_at=datetime(2026, 10, 1, tzinfo=timezone.utc),
         data_complete=True,
     ),
 ]
@@ -86,25 +92,56 @@ class Channel3Service:
         key_features = raw.get("key_features", [])
         structured_attributes = raw.get("structured_attributes", {}) or {}
 
-        price = offers[0]["price"]["price"] if offers else None
-        currency = offers[0]["price"]["currency"] if offers else None
-        source_url = offers[0]["url"] if offers else None
+        # Best offer: prefer in-stock, then first available
+        best_offer = None
+        for o in offers:
+            avail = (o.get("availability") or "").lower().replace(" ", "_")
+            if avail in ("in_stock", "instock", "available", "yes"):
+                best_offer = o
+                break
+        if best_offer is None and offers:
+            best_offer = offers[0]
 
-        # images[] can be strings or objects with a "url" key
-        raw_image = images[0] if images else None
-        if isinstance(raw_image, dict):
-            image_url = raw_image.get("url")
-        else:
-            image_url = raw_image  # plain URL string
+        price = best_offer["price"]["price"] if best_offer else None
+        currency = best_offer["price"]["currency"] if best_offer else None
+        source_url = best_offer["url"] if best_offer else None
 
-        # Build specs: merge key_features list (as {k: k}) with structured_attributes dict
-        if isinstance(key_features, list):
-            specs: dict = {k: k for k in key_features}
+        # Collect all image URLs — handle both string and object formats
+        all_image_urls = []
+        for img in images:
+            if isinstance(img, dict):
+                url = img.get("url") or img.get("src") or img.get("link")
+                if url:
+                    all_image_urls.append(url)
+            elif isinstance(img, str) and img:
+                all_image_urls.append(img)
+        image_url = all_image_urls[0] if all_image_urls else None
+
+        # Build full specs dict
+        specs: dict = {}
+        if isinstance(structured_attributes, dict):
+            specs.update({k: v for k, v in structured_attributes.items() if v is not None})
+
+        # key_features: list of strings -> store as list
+        if isinstance(key_features, list) and key_features:
+            specs["features"] = key_features
         elif isinstance(key_features, dict):
-            specs = dict(key_features)
-        else:
-            specs = {}
-        specs.update(structured_attributes)
+            specs.update(key_features)
+
+        # Harvest any extra top-level product fields
+        for field in ("color", "material", "size", "weight", "dimensions",
+                      "connectivity", "compatibility", "model", "sku",
+                      "series", "category"):
+            val = raw.get(field)
+            if val and field not in specs:
+                specs[field] = val
+
+        # Description
+        description = (raw.get("description") or
+                       raw.get("short_description") or
+                       raw.get("overview") or "")
+        if description:
+            specs["description"] = description
 
         name = raw.get("title", raw.get("name", ""))
 
@@ -112,7 +149,9 @@ class Channel3Service:
         brands = raw.get("brands", [])
         if brands:
             first_brand = brands[0]
-            merchant = first_brand.get("name") if isinstance(first_brand, dict) else first_brand
+            merchant = (first_brand.get("name")
+                        if isinstance(first_brand, dict)
+                        else first_brand)
         else:
             merchant = None
 
@@ -126,7 +165,6 @@ class Channel3Service:
             image_url=image_url,
             specs=specs if specs is not None else {},
             retrieved_at=datetime.now(timezone.utc),
-            # data_complete is computed by NormalizedProduct.compute_data_complete model_validator
         )
 
     async def search_products(
@@ -209,7 +247,9 @@ def get_channel3_service() -> Channel3Service:
 # ---------------------------------------------------------------------------
 
 async def search_products(query: str, session_id: str) -> list:
-    """Backward-compatible wrapper returning the dict shape shopping.py expects."""
+    """Backward-compatible wrapper returning the dict shape the products router expects.
+    Includes ALL available product data: image, description, full specs, source URL.
+    """
     svc = get_channel3_service()
     products = await svc.search_products(query)
     return [
@@ -221,6 +261,8 @@ async def search_products(query: str, session_id: str) -> list:
             "merchant": p.merchant,
             "specs_json": p.specs,
             "source_url": p.source_url,
+            "image_url": p.image_url,          # ← was missing
+            "data_complete": p.data_complete,   # ← was missing
             "constraint_results_json": None,
             "ranking_score": None,
             "retrieved_at": p.retrieved_at.isoformat(),

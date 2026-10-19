@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// Reusable ProofBuy AI logo widget.
 ///
@@ -100,7 +101,7 @@ class _FallbackLogo extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF5B8EFF), Color(0xFF9333EA)],
+          colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
         ),
       ),
       child: Icon(
@@ -124,11 +125,11 @@ class ProofBuyAppBarTitle extends StatelessWidget {
         const ProofBuyLogo(size: 28, showBadge: false, showGlow: false),
         const SizedBox(width: 8),
         RichText(
-          text: const TextSpan(
+          text: TextSpan(
             children: [
               TextSpan(
                 text: 'ProofBuy ',
-                style: TextStyle(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,
@@ -136,10 +137,10 @@ class ProofBuyAppBarTitle extends StatelessWidget {
               ),
               TextSpan(
                 text: 'AI',
-                style: TextStyle(
+                style: GoogleFonts.plusJakartaSans(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF5B8EFF),
+                  color: const Color(0xFF2563EB),
                 ),
               ),
             ],

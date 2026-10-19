@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     paypal_client_secret: str = ""
     paypal_environment: str = "sandbox"
     cors_allowed_origins: List[str] = ["http://localhost:3000"]
+    jwt_secret: str = "change-me-in-production-use-a-long-random-string"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_minutes: int = 60 * 24 * 7  # 7 days
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

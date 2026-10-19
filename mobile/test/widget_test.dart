@@ -10,7 +10,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     // The app navigates to OnboardingScreen on first launch.
-    // Title uses RichText with two spans — find by widget type instead.
-    expect(find.text('Get Started'), findsOneWidget);
+    // First page shows 'Next' button and the skip link.
+    expect(find.text('Next'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
   });
 }

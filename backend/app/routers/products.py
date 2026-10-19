@@ -101,10 +101,17 @@ async def get_products_for_session(
         )
         db.add(product_row)
 
+        # Build the product dict with ALL fields Flutter needs
+        product_dict = {
+            **ranked_product,
+            "id": product_id,  # DB UUID for checkout
+            "image_url": ranked_product.get("image_url"),
+        }
+
         response_items.append(
             RankedProduct(
                 id=product_id,
-                product=ranked_product,
+                product=product_dict,
                 constraint_results=constraint_results,
                 ranking_score=ranking_score,
                 ranking_confidence=ranking_confidence,

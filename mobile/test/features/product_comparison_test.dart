@@ -99,6 +99,11 @@ void main() {
       when(() => mockRepo.getProducts(sessionId))
           .thenAnswer((_) async => products);
 
+      // Large viewport so both cards render without scrolling off-screen.
+      tester.view.physicalSize = const Size(1080, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -113,8 +118,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ListView), findsOneWidget);
-      expect(find.text('Product A'), findsOneWidget);
-      expect(find.text('Product B'), findsOneWidget);
+      expect(find.text('Product A', skipOffstage: false), findsOneWidget);
+      expect(find.text('Product B', skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('products are sorted by rankingScore descending',

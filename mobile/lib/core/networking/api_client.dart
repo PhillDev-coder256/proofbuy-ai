@@ -28,7 +28,18 @@ Dio createDio() {
         handler.next(response);
       },
       onError: (DioException e, handler) {
-        handler.next(_mapException(e));
+        // Reject with the mapped AppException directly so callers can
+        // catch `on AppException` without unwrapping DioException.error.
+        handler.reject(
+          DioException(
+            requestOptions: e.requestOptions,
+            response: e.response,
+            type: e.type,
+            error: _mapToAppException(e),
+            message: e.message,
+            stackTrace: e.stackTrace,
+          ),
+        );
       },
     ),
   );
@@ -36,55 +47,43 @@ Dio createDio() {
   return instance;
 }
 
-/// Maps a [DioException] to a typed [AppException] carried as the error field.
-DioException _mapException(DioException e) {
-  final AppException mapped;
-
+/// Maps a [DioException] to a typed [AppException].
+AppException _mapToAppException(DioException e) {
   switch (e.type) {
     case DioExceptionType.connectionTimeout:
     case DioExceptionType.receiveTimeout:
-      mapped = NetworkException(e.message ?? 'Connection timed out');
+      return NetworkException(e.message ?? 'Connection timed out');
     case DioExceptionType.connectionError:
-      mapped = NetworkException(e.message ?? 'Connection error');
+      return NetworkException(
+          'Cannot reach the server. Is it running?');
     default:
       final status = e.response?.statusCode;
       if (status == null) {
-        mapped = NetworkException(e.message ?? 'Unknown network error');
+        return NetworkException(e.message ?? 'Unknown network error');
       } else if (status == 404) {
-        mapped = NotFoundException(
-          _responseMessage(e.response) ?? 'Resource not found',
-        );
+        return NotFoundException(
+            _responseMessage(e.response) ?? 'Resource not found');
       } else if (status == 422) {
-        mapped = ValidationException(
-          _responseMessage(e.response) ?? 'Validation error',
-        );
+        return ValidationException(
+            _responseMessage(e.response) ?? 'Validation error');
       } else if (status == 402) {
-        mapped = PaymentException(
-          _responseMessage(e.response) ?? 'Payment error',
-        );
+        return PaymentException(
+            _responseMessage(e.response) ?? 'Payment error');
       } else {
-        mapped = ServerException(
-          status,
-          _responseMessage(e.response) ?? 'Server error',
-        );
+        return ServerException(
+            status, _responseMessage(e.response) ?? 'Server error');
       }
   }
-
-  return DioException(
-    requestOptions: e.requestOptions,
-    response: e.response,
-    type: e.type,
-    error: mapped,
-    message: mapped.toString(),
-    stackTrace: e.stackTrace,
-  );
 }
 
 String? _responseMessage(Response<dynamic>? response) {
   if (response == null) return null;
   final data = response.data;
   if (data is Map<String, dynamic>) {
-    return data['detail']?.toString() ?? data['message']?.toString();
+    // Backend returns: {"error": "...", "status_code": ...}
+    return data['error']?.toString()
+        ?? data['detail']?.toString()
+        ?? data['message']?.toString();
   }
   return data?.toString();
 }
