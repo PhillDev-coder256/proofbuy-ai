@@ -9,7 +9,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../app/theme.dart';
 import '../../core/networking/repositories_providers.dart';
 import '../../core/widgets/error_widget.dart';
-import '../../core/widgets/loading_widget.dart';
+import '../../core/widgets/shimmer_widgets.dart';
 import '../../shared/models/app_transaction.dart';
 
 part 'transaction_result_screen.g.dart';
@@ -58,7 +58,7 @@ class TransactionResultScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
       ),
       body: asyncTx.when(
-        loading: () => const LoadingWidget(message: 'Loading transaction…'),
+        loading: () => const TransactionShimmer(),
         error: (error, _) => ProofBuyErrorWidget(
           message: error.toString(),
           onRetry: () => ref.invalidate(transactionResultProvider(purchaseId)),

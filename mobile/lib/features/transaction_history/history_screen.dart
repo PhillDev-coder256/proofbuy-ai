@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import '../../app/theme.dart';
 import '../../core/networking/repositories_providers.dart';
 import '../../core/widgets/error_widget.dart';
-import '../../core/widgets/loading_widget.dart';
+import '../../core/widgets/shimmer_widgets.dart';
 import '../../shared/models/history_item.dart';
 
 // ---------------------------------------------------------------------------
@@ -66,7 +66,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         backgroundColor: Colors.transparent,
       ),
       body: historyAsync.when(
-        loading: () => const LoadingWidget(),
+        loading: () => const HistoryShimmer(),
         error: (error, _) => ProofBuyErrorWidget(
           message: error.toString(),
           onRetry: () => ref.invalidate(_historyProvider),

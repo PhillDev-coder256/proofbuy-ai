@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
 import '../../app/theme.dart';
 import '../../shared/models/ranked_product.dart';
@@ -329,19 +330,11 @@ class _ProductImage extends StatelessWidget {
       height: 200,
       width: double.infinity,
       fit: BoxFit.cover,
-      placeholder: (_, __) => Container(
-        height: 200,
-        color: const Color(0xFFF1F5F9),
-        child: const Center(
-          child: SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: Color(0xFF2563EB),
-            ),
-          ),
-        ),
+      placeholder: (_, __) => Shimmer.fromColors(
+        baseColor: const Color(0xFFEFEFF4),
+        highlightColor: const Color(0xFFFAFAFF),
+        period: const Duration(milliseconds: 1200),
+        child: Container(height: 200, width: double.infinity, color: Colors.white),
       ),
       errorWidget: (_, __, ___) => _Fallback(),
     );

@@ -6,7 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../app/theme.dart';
 import '../../core/networking/repositories_providers.dart';
 import '../../core/widgets/error_widget.dart';
-import '../../core/widgets/loading_widget.dart';
+import '../../core/widgets/shimmer_widgets.dart';
 import '../../shared/models/ranked_product.dart';
 import '../../shared/models/shopping_session.dart';
 import '../product_details/selected_product_provider.dart';
@@ -62,7 +62,7 @@ class _ProductComparisonScreenState
     if (productsAsync.isLoading) {
       return const Scaffold(
         backgroundColor: Color(0xFFF5F6FF),
-        body: LoadingWidget(message: 'Loading products...'),
+        body: SafeArea(child: ProductListShimmer()),
       );
     }
 

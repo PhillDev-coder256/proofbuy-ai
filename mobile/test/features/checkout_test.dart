@@ -10,7 +10,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:proofbuy_ai/core/networking/checkout_repository.dart';
 import 'package:proofbuy_ai/core/networking/repositories_providers.dart';
 import 'package:proofbuy_ai/core/widgets/error_widget.dart';
-import 'package:proofbuy_ai/core/widgets/loading_widget.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:proofbuy_ai/features/checkout/checkout_provider.dart';
 import 'package:proofbuy_ai/features/checkout/checkout_screen.dart';
 import 'package:proofbuy_ai/features/checkout/checkout_state.dart';
@@ -84,7 +84,7 @@ void main() {
       await tester.pumpWidget(buildCheckoutWidget(repo: mockRepo));
       await tester.pump(); // one frame — state is CheckoutCreatingOrder
 
-      expect(find.byType(LoadingWidget), findsOneWidget);
+      expect(find.byType(Shimmer), findsOneWidget);
 
       // Complete so the widget tree can dispose cleanly.
       completer.complete(
@@ -229,7 +229,7 @@ void main() {
       // After navigation the transaction screen shows the tx id.
       expect(find.text('Transaction tx-5'), findsOneWidget);
       // The LoadingWidget from CheckoutScreen is gone.
-      expect(find.byType(LoadingWidget), findsNothing);
+      expect(find.byType(Shimmer), findsNothing);
     });
 
     testWidgets(

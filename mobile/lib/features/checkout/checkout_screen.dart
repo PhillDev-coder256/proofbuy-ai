@@ -5,7 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../core/widgets/error_widget.dart';
-import '../../core/widgets/loading_widget.dart';
+import '../../core/widgets/shimmer_widgets.dart';
 import '../../shared/models/ranked_product.dart';
 import '../product_details/selected_product_provider.dart';
 import 'checkout_provider.dart';
@@ -84,7 +84,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   Widget _buildBody(BuildContext context, WidgetRef ref, CheckoutState state) {
     return switch (state) {
       CheckoutIdle() || CheckoutCreatingOrder() =>
-        const LoadingWidget(message: 'Creating PayPal Sandbox order…'),
+        const CheckoutShimmer(),
 
       CheckoutAwaitingApproval(:final orderId, :final approvalUrl, :final purchaseId) =>
         _AwaitingApprovalView(
@@ -94,10 +94,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ),
 
       CheckoutCapturing() =>
-        const LoadingWidget(message: 'Verifying payment on PayPal servers…'),
+        const CheckoutShimmer(),
 
       CheckoutSuccess() =>
-        const LoadingWidget(message: 'Payment verified! Navigating…'),
+        const CheckoutShimmer(),
 
       CheckoutFailure(:final message) => ProofBuyErrorWidget(
           message: message,
@@ -134,31 +134,69 @@ class _AwaitingApprovalView extends ConsumerWidget {
 
   Future<void> _launchPayPalUrl(BuildContext context, String url) async {
     final uri = Uri.parse(url);
+
+    // Try in-app browser first — most reliable on both emulators and devices
+    // since it doesn't need a registered external browser handler.
+    try {
+      final canLaunch = await canLaunchUrl(uri);
+      if (canLaunch) {
+        // Try external browser (best UX for PayPal sandbox login)
+        final launched = await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+        if (launched) return;
+      }
+    } catch (_) {}
+
+    // Fallback 1: in-app web view (works without external browser)
     try {
       final launched = await launchUrl(
         uri,
-        mode: LaunchMode.externalApplication,
+        mode: LaunchMode.inAppBrowserView,
+        webViewConfiguration: const WebViewConfiguration(
+          enableJavaScript: true,
+          enableDomStorage: true,
+        ),
       );
-      if (!launched) {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-      }
-    } catch (e) {
-      try {
-        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
-      } catch (_) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Please authorize in browser: $url',
-                style: pjs(size: 12, color: Colors.white),
+      if (launched) return;
+    } catch (_) {}
+
+    // Fallback 2: platform default (lets OS decide)
+    try {
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
+      return;
+    } catch (_) {}
+
+    // Last resort: show the URL so the user can copy it
+    if (context.mounted) {
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Open PayPal', style: pjs(size: 16, weight: FontWeight.w700, color: const Color(0xFF0F172A))),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Could not open browser automatically. Please copy this URL and open it manually in your browser:',
+                style: pjs(size: 13, color: const Color(0xFF475569), height: 1.5),
               ),
-              backgroundColor: const Color(0xFF0070BA),
-              behavior: SnackBarBehavior.floating,
+              const SizedBox(height: 12),
+              SelectableText(
+                url,
+                style: pjs(size: 11, color: const Color(0xFF0070BA), weight: FontWeight.w500),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Close', style: pjs(size: 14, color: const Color(0xFF6C47FF), weight: FontWeight.w600)),
             ),
-          );
-        }
-      }
+          ],
+        ),
+      );
     }
   }
 

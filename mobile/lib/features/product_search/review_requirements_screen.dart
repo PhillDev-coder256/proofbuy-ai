@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../core/networking/repositories_providers.dart';
 import '../../core/widgets/error_widget.dart';
-import '../../core/widgets/loading_widget.dart';
+import '../../core/widgets/shimmer_widgets.dart';
 import '../../shared/models/shopping_session.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ class _ReviewRequirementsScreenState
       body: SafeArea(
         child: sessionAsync.when(
           loading: () =>
-              const LoadingWidget(message: 'Loading session…'),
+              const ReviewRequirementsShimmer(),
           error: (error, _) => ProofBuyErrorWidget(
             message: error.toString(),
             onRetry: () =>
