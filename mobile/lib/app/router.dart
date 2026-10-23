@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../features/checkout/checkout_return_screen.dart';
+import '../features/checkout/checkout_cancel_screen.dart';
 import '../features/checkout/checkout_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/auth/signin_screen.dart';
@@ -22,10 +23,20 @@ bool _firstLaunch = true;
 
 final appRouter = GoRouter(
   initialLocation: '/',
-  // Handle proofbuy:// deep links by transforming the URI scheme.
-  // GoRouter 14.x uses [routerNeglect] / path matching; deep-link URIs
-  // with a custom scheme are passed through the platform channel and
-  // resolved against the path portion directly.
+  // Handle proofbuy:// deep links: strip the custom scheme and map
+  // to an internal path GoRouter can match.
+  // e.g. proofbuy://checkout/return?token=XYZ  → /checkout/return?token=XYZ
+  //      proofbuy://checkout/cancel             → /checkout/cancel
+  redirect: (context, state) {
+    final uri = state.uri;
+    if (uri.scheme == 'proofbuy') {
+      // Reconstruct as a regular path with query parameters preserved.
+      final path = uri.path.startsWith('/') ? uri.path : '/${uri.path}';
+      final query = uri.query.isNotEmpty ? '?${uri.query}' : '';
+      return '$path$query';
+    }
+    return null; // no redirect needed for normal paths
+  },
   routes: [
     GoRoute(
       path: '/',
@@ -87,7 +98,15 @@ final appRouter = GoRouter(
     // so GoRouter's first-match logic picks the static segment.
     GoRoute(
       path: '/checkout/return',
-      builder: (context, state) => const CheckoutReturnScreen(),
+      builder: (context, state) => CheckoutReturnScreen(
+        // PayPal returns token (= orderId) and PayerID as query params
+        token: state.uri.queryParameters['token'] ?? '',
+        payerId: state.uri.queryParameters['PayerID'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/checkout/cancel',
+      builder: (context, state) => const CheckoutCancelScreen(),
     ),
     GoRoute(
       path: '/checkout/:purchaseId',
