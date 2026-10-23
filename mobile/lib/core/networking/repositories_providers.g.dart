@@ -200,3 +200,51 @@ final class TransactionsRepositoryProvider
 
 String _$transactionsRepositoryHash() =>
     r'd67e320d740fca8bc1208ccdbb155292bd58c6e6';
+
+@ProviderFor(productDetailRepository)
+final productDetailRepositoryProvider = ProductDetailRepositoryProvider._();
+
+final class ProductDetailRepositoryProvider
+    extends
+        $FunctionalProvider<
+          ProductDetailRepository,
+          ProductDetailRepository,
+          ProductDetailRepository
+        >
+    with $Provider<ProductDetailRepository> {
+  ProductDetailRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'productDetailRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$productDetailRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ProductDetailRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ProductDetailRepository create(Ref ref) {
+    return productDetailRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ProductDetailRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ProductDetailRepository>(value),
+    );
+  }
+}
+
+String _$productDetailRepositoryHash() =>
+    r'305c7c0c56949fbfa9af08f0d14b296861d8badd';

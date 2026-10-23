@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'api_client.dart';
 import 'checkout_repository.dart';
+import 'product_detail_repository.dart';
 import 'products_repository.dart';
 import 'shopping_repository.dart';
 import 'transactions_repository.dart';
@@ -23,3 +24,7 @@ CheckoutRepository checkoutRepository(Ref ref) =>
 @riverpod
 TransactionsRepository transactionsRepository(Ref ref) =>
     TransactionsRepository(ref.watch(apiClientProvider));
+
+@riverpod
+ProductDetailRepository productDetailRepository(Ref ref) =>
+    ProductDetailRepository(ref.watch(apiClientProvider));
