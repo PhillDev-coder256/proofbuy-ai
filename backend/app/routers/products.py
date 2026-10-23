@@ -3,6 +3,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -15,9 +16,54 @@ from app.schemas.requirements import ShoppingRequirements
 from app.services.constraint_engine import constraint_engine
 from app.services.ai_service import ai_service
 from app.services import channel3_service
+from app.services.channel3_service import get_channel3_service
 from app.core.exceptions import NotFoundError, ValidationError
 
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
+
+
+@router.get("/detail/{channel3_product_id}")
+@limiter.limit("30/minute")
+async def get_product_detail(
+    request: Request,
+    channel3_product_id: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return full rich product data for a single Channel3 product ID."""
+    svc = get_channel3_service()
+    product = await svc.get_product_detail(channel3_product_id)
+
+    if product is None:
+        # Fall back to DB lookup
+        result = await db.execute(
+            select(ProductResult).where(
+                ProductResult.channel3_product_id == channel3_product_id
+            )
+        )
+        p = result.scalars().first()
+        if p is None:
+            raise NotFoundError(f"Product '{channel3_product_id}' not found")
+        # Return DB record as a basic dict
+        return JSONResponse(content={
+            "channel3_product_id": p.channel3_product_id,
+            "name": p.name,
+            "price": p.price,
+            "currency": p.currency,
+            "merchant": p.merchant,
+            "source_url": p.source_url,
+            "specs_json": p.specs_json,
+            "retrieved_at": p.retrieved_at.isoformat() if p.retrieved_at else None,
+            "all_images": [],
+            "all_offers": [],
+            "ratings": None,
+        })
+
+    # Serialize NormalizedProduct to dict, converting datetime fields to ISO strings
+    data = product.model_dump()
+    if isinstance(data.get("retrieved_at"), datetime):
+        data["retrieved_at"] = data["retrieved_at"].isoformat()
+
+    return JSONResponse(content=data)
 
 
 @router.get("/{session_id}", response_model=List[RankedProduct])
