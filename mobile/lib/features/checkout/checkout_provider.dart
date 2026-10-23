@@ -9,7 +9,7 @@ part 'checkout_provider.g.dart';
 /// Drives the PayPal checkout state machine.
 ///
 /// SECURITY INVARIANT: [CheckoutState.success] is ONLY set when the backend
-/// capture response has `verified == true`.  A `verified == false` response
+/// capture response has `verified == true`. A `verified == false` response
 /// always transitions to [CheckoutState.failure].
 @riverpod
 class CheckoutNotifier extends _$CheckoutNotifier {
@@ -17,8 +17,6 @@ class CheckoutNotifier extends _$CheckoutNotifier {
   CheckoutState build() => const CheckoutState.idle();
 
   /// Creates a PayPal order for the given [productResultId].
-  ///
-  /// Transitions: idle/any → creatingOrder → awaitingApproval (or failure).
   Future<void> createOrder(String productResultId) async {
     state = const CheckoutState.creatingOrder();
     try {
@@ -38,13 +36,8 @@ class CheckoutNotifier extends _$CheckoutNotifier {
   }
 
   /// Captures payment after the user has approved in PayPal.
-  ///
-  /// Transitions: awaitingApproval → capturing → success (verified=true)
-  ///                                           → failure (verified=false or error)
-  ///
-  /// CRITICAL: [CheckoutState.success] is set ONLY when [response.verified]
-  /// is explicitly `true`.  Any other value results in [CheckoutState.failure].
   Future<void> captureOrder(String orderId, String purchaseId) async {
+    final currentState = state;
     state = CheckoutState.capturing(orderId: orderId, purchaseId: purchaseId);
     try {
       final response = await ref
@@ -54,13 +47,22 @@ class CheckoutNotifier extends _$CheckoutNotifier {
       if (response.verified == true) {
         state = CheckoutState.success(transactionId: response.transactionId);
       } else {
-        // verified == false: payment went through but could not be verified.
         state = const CheckoutState.failure(
           message: 'Payment could not be verified. Please contact support.',
         );
       }
     } on AppException catch (e) {
-      state = CheckoutState.failure(message: _messageFor(e));
+      // If payment is not yet approved in PayPal, revert to awaiting approval state with message
+      final msg = _messageFor(e);
+      if (e is ValidationException || msg.contains('422') || msg.contains('UNPROCESSABLE')) {
+        if (currentState is CheckoutAwaitingApproval) {
+          state = currentState; // Keep awaiting approval UI active
+        } else {
+          state = CheckoutState.failure(message: 'PayPal payment not yet approved. Please open PayPal to approve.');
+        }
+      } else {
+        state = CheckoutState.failure(message: msg);
+      }
     } catch (e) {
       state = CheckoutState.failure(message: e.toString());
     }
@@ -70,7 +72,8 @@ class CheckoutNotifier extends _$CheckoutNotifier {
         NetworkException(:final message) => message,
         ServerException(:final message) => message,
         NotFoundException(:final message) => message,
-        ValidationException(:final message) => message,
+        ValidationException(:final message) =>
+          'Payment not yet approved in PayPal. Please click "Open PayPal to Approve" first.',
         PaymentException(:final message) => message,
       };
 }

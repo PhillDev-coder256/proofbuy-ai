@@ -3,17 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/theme.dart';
 import '../../core/widgets/error_widget.dart';
 import '../../core/widgets/loading_widget.dart';
 import '../../shared/models/ranked_product.dart';
+import '../product_details/selected_product_provider.dart';
 import 'checkout_provider.dart';
 import 'checkout_state.dart';
 
 /// Drives the PayPal checkout flow.
 ///
 /// On mount it immediately calls [CheckoutNotifier.createOrder] using the
-/// [productResultId] extracted from [GoRouterState.extra].  Navigation to
-/// the transaction result screen only happens from [CheckoutSuccess].
+/// [productResultId] extracted from [GoRouterState.extra] or [selectedProductProvider].
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({
     super.key,
@@ -21,11 +22,7 @@ class CheckoutScreen extends ConsumerStatefulWidget {
     required this.orderId,
   });
 
-  /// The product-result id used to create the PayPal order.
-  /// Kept for route compatibility; the real value comes from extras.
   final String purchaseId;
-
-  /// Unused at construction time — the order is created by the notifier.
   final String orderId;
 
   @override
@@ -33,7 +30,6 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 }
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
-  /// Whether [CheckoutNotifier.createOrder] has been called for this mount.
   bool _orderCreated = false;
 
   @override
@@ -41,13 +37,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     super.didChangeDependencies();
     if (!_orderCreated) {
       _orderCreated = true;
-      // productResultId comes from GoRouter extras (a RankedProduct).
-      final product = GoRouterState.of(context).extra as RankedProduct?;
+      final extraProduct = GoRouterState.of(context).extra as RankedProduct?;
+      final storedProduct = ref.read(selectedProductProvider);
+      final product = extraProduct ?? storedProduct;
       final productResultId =
           product?.productResultId ?? widget.purchaseId;
-      // Defer provider modification until after the current build phase.
-      // Riverpod 3.x disallows modifying providers inside lifecycle callbacks
-      // that fire during the widget tree build.
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ref.read(checkoutProvider.notifier).createOrder(productResultId);
@@ -58,7 +53,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listen for success state and navigate to the transaction result screen.
     ref.listen<CheckoutState>(checkoutProvider, (_, next) {
       if (next is CheckoutSuccess) {
         context.go('/transaction/${next.transactionId}');
@@ -68,15 +62,29 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final state = ref.watch(checkoutProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
-      body: _buildBody(context, ref, state),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: Text(
+          'PayPal Checkout',
+          style: pjs(
+            size: 18,
+            weight: FontWeight.w700,
+            color: const Color(0xFF0F172A),
+          ),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
+      body: SafeArea(
+        child: _buildBody(context, ref, state),
+      ),
     );
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, CheckoutState state) {
     return switch (state) {
       CheckoutIdle() || CheckoutCreatingOrder() =>
-        const LoadingWidget(message: 'Creating PayPal order…'),
+        const LoadingWidget(message: 'Creating PayPal Sandbox order…'),
 
       CheckoutAwaitingApproval(:final orderId, :final approvalUrl, :final purchaseId) =>
         _AwaitingApprovalView(
@@ -86,18 +94,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ),
 
       CheckoutCapturing() =>
-        const LoadingWidget(message: 'Verifying payment…'),
+        const LoadingWidget(message: 'Verifying payment on PayPal servers…'),
 
-      // Navigation is handled in ref.listen; render a brief loading state
-      // to avoid a flash of empty content before the route change.
       CheckoutSuccess() =>
-        const LoadingWidget(message: 'Payment verified!'),
+        const LoadingWidget(message: 'Payment verified! Navigating…'),
 
       CheckoutFailure(:final message) => ProofBuyErrorWidget(
           message: message,
           onRetry: () {
-            final product =
+            final extraProduct =
                 GoRouterState.of(context).extra as RankedProduct?;
+            final storedProduct = ref.read(selectedProductProvider);
+            final product = extraProduct ?? storedProduct;
             final productResultId =
                 product?.productResultId ?? widget.purchaseId;
             ref
@@ -124,51 +132,202 @@ class _AwaitingApprovalView extends ConsumerWidget {
   final String approvalUrl;
   final String purchaseId;
 
+  Future<void> _launchPayPalUrl(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched) {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      try {
+        await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Please authorize in browser: $url',
+                style: pjs(size: 12, color: Colors.white),
+              ),
+              backgroundColor: const Color(0xFF0070BA),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.payment, size: 64, color: Color(0xFF003087)),
-          const SizedBox(height: 24),
-          const Text(
-            'Complete your payment in PayPal',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Tap the button below to open PayPal and approve your purchase.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 12),
 
-          // Open PayPal button
-          ElevatedButton.icon(
-            onPressed: () => launchUrl(
-              Uri.parse(approvalUrl),
-              mode: LaunchMode.externalApplication,
+          // PayPal Banner Card
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x06000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
-            icon: const Icon(Icons.open_in_new),
-            label: const Text('Open PayPal to Approve'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF003087),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Column(
+              children: [
+                // PayPal Badge Icon
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: const Color(0xFFDBEAFE)),
+                  ),
+                  child: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    size: 32,
+                    color: Color(0xFF0070BA),
+                  ),
+                ),
+                const SizedBox(height: 18),
+
+                Text(
+                  'Complete Payment with PayPal',
+                  textAlign: TextAlign.center,
+                  style: pjs(
+                    size: 20,
+                    weight: FontWeight.w800,
+                    color: const Color(0xFF0F172A),
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                Text(
+                  'Tap below to open PayPal Sandbox, log in, and authorize your purchase securely.',
+                  textAlign: TextAlign.center,
+                  style: pjs(
+                    size: 13.5,
+                    color: const Color(0xFF475569),
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Order ID Tag
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Text(
+                    'Order Ref: $orderId',
+                    style: pjs(
+                      size: 12,
+                      weight: FontWeight.w600,
+                      color: const Color(0xFF334155),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // Primary Open PayPal Button
+          GestureDetector(
+            onTap: () => _launchPayPalUrl(context, approvalUrl),
+            child: Container(
+              height: 54,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(27),
+                color: const Color(0xFF0070BA), // Official PayPal Blue
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x300070BA),
+                    blurRadius: 16,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.open_in_new_rounded,
+                      color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Open PayPal to Approve',
+                    style: pjs(
+                      size: 16,
+                      weight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           const SizedBox(height: 16),
 
-          // Confirm payment button — waits for explicit user tap.
-          TextButton(
+          // Secondary Confirm Payment Button
+          OutlinedButton(
             onPressed: () => ref
                 .read(checkoutProvider.notifier)
                 .captureOrder(orderId, purchaseId),
-            child: const Text("I've completed payment"),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(50),
+              side: const BorderSide(color: Color(0xFFCBD5E1)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(25),
+              ),
+            ),
+            child: Text(
+              "I've completed payment",
+              style: pjs(
+                size: 15,
+                weight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // Security Shield Footer
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.shield_outlined,
+                  size: 16, color: Color(0xFF059669)),
+              const SizedBox(width: 6),
+              Text(
+                'Server-Side Verification • PayPal Protection',
+                style: pjs(
+                  size: 12,
+                  weight: FontWeight.w600,
+                  color: const Color(0xFF059669),
+                ),
+              ),
+            ],
           ),
         ],
       ),

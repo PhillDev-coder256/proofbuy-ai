@@ -9,6 +9,7 @@ import '../../core/widgets/error_widget.dart';
 import '../../core/widgets/loading_widget.dart';
 import '../../shared/models/ranked_product.dart';
 import '../../shared/models/shopping_session.dart';
+import '../product_details/selected_product_provider.dart';
 import 'product_card.dart';
 
 part 'product_comparison_screen.g.dart';
@@ -299,10 +300,13 @@ class _ProductComparisonScreenState
                           index.toString();
                       return ProductCard(
                         product: product,
-                        onTap: () => context.go(
-                          '/product/$productId',
-                          extra: product,
-                        ),
+                        onTap: () {
+                          ref.read(selectedProductProvider.notifier).select(product);
+                          context.go(
+                            '/product/$productId',
+                            extra: product,
+                          );
+                        },
                       );
                     }).toList(),
                   ),

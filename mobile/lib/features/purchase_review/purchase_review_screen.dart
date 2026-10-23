@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../app/theme.dart';
 import '../../features/product_comparison/constraint_badge.dart';
 import '../../shared/models/ranked_product.dart';
+import '../product_details/selected_product_provider.dart';
 
-/// Shows a summary of the selected [RankedProduct] before the user commits
-/// to a PayPal payment.
-///
-/// The [RankedProduct] is retrieved from [GoRouterState.extra].  If it is
-/// unavailable, a short error message is displayed instead.
-class PurchaseReviewScreen extends StatelessWidget {
+/// Shows a summary of the selected [RankedProduct] before committing
+/// to a verified PayPal payment.
+class PurchaseReviewScreen extends ConsumerWidget {
   const PurchaseReviewScreen({
     super.key,
     required this.productResultId,
@@ -19,13 +19,32 @@ class PurchaseReviewScreen extends StatelessWidget {
   final String productResultId;
 
   @override
-  Widget build(BuildContext context) {
-    final product = GoRouterState.of(context).extra as RankedProduct?;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final extraProduct = GoRouterState.of(context).extra as RankedProduct?;
+    final storedProduct = ref.watch(selectedProductProvider);
+    final product = extraProduct ?? storedProduct;
 
     if (product == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Purchase Review')),
-        body: const Center(child: Text('Product details unavailable.')),
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          title: Text(
+            'Purchase Review',
+            style: pjs(
+              size: 18,
+              weight: FontWeight.w700,
+              color: const Color(0xFF0F172A),
+            ),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+        ),
+        body: Center(
+          child: Text(
+            'Product details unavailable.',
+            style: pjs(size: 15, color: const Color(0xFF64748B)),
+          ),
+        ),
       );
     }
 
@@ -36,7 +55,7 @@ class PurchaseReviewScreen extends StatelessWidget {
   }
 }
 
-class _PurchaseReviewView extends StatelessWidget {
+class _PurchaseReviewView extends ConsumerWidget {
   const _PurchaseReviewView({
     required this.product,
     required this.productResultId,
@@ -46,155 +65,276 @@ class _PurchaseReviewView extends StatelessWidget {
   final String productResultId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final data = product.productData;
-    final theme = Theme.of(context);
 
-    // Format price.
+    // Format price
     String priceText = '';
     if (data.price != null) {
-      final currency = data.currency ?? 'USD';
       try {
-        final fmt = NumberFormat.currency(symbol: currency, decimalDigits: 2);
+        final fmt = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
         priceText = fmt.format(data.price);
       } catch (_) {
-        priceText = '${data.currency ?? ''} ${data.price}'.trim();
+        priceText = '\$${data.price}'.trim();
       }
     }
 
-    // Collect UNKNOWN constraints for the warning banner.
+    // Collect UNKNOWN constraints
     final unknownKeys = product.constraintResults.entries
         .where((e) => e.value.toUpperCase() == 'UNKNOWN')
         .map((e) => e.key)
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Purchase Review')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // UNKNOWN warning banner
-            if (unknownKeys.isNotEmpty)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.amber[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.amber),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: Text(
+          'Purchase Review',
+          style: pjs(
+            size: 18,
+            weight: FontWeight.w700,
+            color: const Color(0xFF0F172A),
+          ),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Unverified Warning Banner
+              if (unknownKeys.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
+                          color: Color(0xFFD97706), size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Unverified attributes: ${unknownKeys.join(', ')}. Review before confirming.',
+                          style: pjs(
+                            size: 12.5,
+                            color: const Color(0xFF92400E),
+                            height: 1.4,
+                            weight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
+
+              // Product Card Summary
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x06000000),
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        color: Colors.amber, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'The following attributes could not be verified: '
-                        '${unknownKeys.join(', ')}',
-                        style: theme.textTheme.bodyMedium,
+                    Text(
+                      data.name,
+                      style: pjs(
+                        size: 18,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    if (priceText.isNotEmpty)
+                      Text(
+                        priceText,
+                        style: pjs(
+                          size: 24,
+                          weight: FontWeight.w800,
+                          color: const Color(0xFF2563EB),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+
+                    if (data.merchant != null && data.merchant!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.store_outlined,
+                              size: 14, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Sold & verified by ${data.merchant}',
+                            style: pjs(
+                              size: 12.5,
+                              color: const Color(0xFF64748B),
+                              weight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Constraint Verification
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'AI Constraint Verification',
+                      style: pjs(
+                        size: 15,
+                        weight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...product.constraintResults.entries.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                e.key,
+                                style: pjs(
+                                  size: 13,
+                                  color: const Color(0xFF334155),
+                                  weight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            ConstraintBadge(attribute: e.key, result: e.value),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
 
-            // Product name
-            Text(
-              data.name,
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 20),
 
-            // Price
-            if (priceText.isNotEmpty)
-              Text(
-                priceText,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w600,
+              // Total Summary
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFDBEAFE)),
                 ),
-              ),
-
-            // Merchant
-            if (data.merchant != null && data.merchant!.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Sold by ${data.merchant}',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: Colors.grey[700]),
-              ),
-            ],
-
-            const SizedBox(height: 24),
-
-            // Constraint verification section
-            Text(
-              'Constraint Verification',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ...product.constraintResults.entries.map(
-              (e) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(e.key)),
-                    ConstraintBadge(attribute: e.key, result: e.value),
+                    Text(
+                      'Estimated Total',
+                      style: pjs(
+                        size: 15,
+                        weight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    Text(
+                      priceText.isNotEmpty ? priceText : '—',
+                      style: pjs(
+                        size: 20,
+                        weight: FontWeight.w800,
+                        color: const Color(0xFF2563EB),
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
 
-            const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
-            // Estimated total
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Estimated Total',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  priceText.isNotEmpty ? priceText : '—',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+              // Confirm and Pay button
+              GestureDetector(
+                onTap: () {
+                  ref.read(selectedProductProvider.notifier).select(product);
+                  context.go(
+                    '/checkout/$productResultId',
+                    extra: product,
+                  );
+                },
+                child: Container(
+                  height: 54,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(27),
+                    color: const Color(0xFF0070BA), // Official PayPal Blue
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x300070BA),
+                        blurRadius: 16,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.payment_rounded,
+                          color: Colors.white, size: 20),
+                      const SizedBox(width: 10),
+                      Text(
+                        'Confirm & Pay with PayPal',
+                        style: pjs(
+                          size: 16,
+                          weight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 32),
-
-            // Confirm and Pay button
-            ElevatedButton(
-              onPressed: () => context.go(
-                '/checkout/$productResultId',
-                extra: product,
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF003087), // PayPal blue
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: const Text('Confirm and Pay with PayPal'),
-            ),
-            const SizedBox(height: 12),
 
-            // Cancel button
-            TextButton(
-              onPressed: () => context.pop(),
-              child: const Text('Cancel'),
-            ),
-          ],
+              const SizedBox(height: 12),
+
+              TextButton(
+                onPressed: () => context.pop(),
+                child: Text(
+                  'Cancel',
+                  style: pjs(
+                    size: 14,
+                    weight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
