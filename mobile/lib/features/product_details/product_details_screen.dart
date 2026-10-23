@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../features/product_comparison/constraint_badge.dart';
@@ -79,6 +80,19 @@ class _ProductDetailsView extends ConsumerWidget {
       }
     }
 
+    final specs = data.specs;
+    final description = specs != null && specs['description'] is String
+        ? specs['description'] as String
+        : null;
+    final features = specs != null && specs['features'] is List
+        ? (specs['features'] as List).map((e) => e.toString()).toList()
+        : <String>[];
+    final techSpecs = specs != null
+        ? specs.entries
+            .where((e) => e.key != 'description' && e.key != 'features')
+            .toList()
+        : <MapEntry<String, dynamic>>[];
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -101,7 +115,7 @@ class _ProductDetailsView extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Product image container
+              // Hero product image
               Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
@@ -119,7 +133,7 @@ class _ProductDetailsView extends ConsumerWidget {
                   child: data.imageUrl != null && data.imageUrl!.isNotEmpty
                       ? CachedNetworkImage(
                           imageUrl: data.imageUrl!,
-                          height: 220,
+                          height: 250,
                           width: double.infinity,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => _ImagePlaceholder(),
@@ -131,7 +145,7 @@ class _ProductDetailsView extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
 
-              // Product card content
+              // Product info card
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -142,10 +156,11 @@ class _ProductDetailsView extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Product name 24px w800
                     Text(
                       data.name,
                       style: pjs(
-                        size: 18,
+                        size: 24,
                         weight: FontWeight.w800,
                         color: const Color(0xFF0F172A),
                         height: 1.3,
@@ -153,6 +168,7 @@ class _ProductDetailsView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
 
+                    // Price 22px w800 PayPal blue
                     if (priceText.isNotEmpty)
                       Text(
                         priceText,
@@ -164,6 +180,7 @@ class _ProductDetailsView extends ConsumerWidget {
                         ),
                       ),
 
+                    // Merchant row
                     if (data.merchant != null && data.merchant!.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Row(
@@ -183,21 +200,38 @@ class _ProductDetailsView extends ConsumerWidget {
                       ),
                     ],
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
 
-                    // Confidence score
-                    Row(
+                    // Confidence bar
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('AI Match Confidence:',
-                            style: pjs(
-                                size: 12, color: const Color(0xFF64748B))),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${(product.rankingConfidence * 100).toStringAsFixed(0)}%',
-                          style: pjs(
-                            size: 12,
-                            weight: FontWeight.w700,
-                            color: const Color(0xFF2563EB),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'AI Match Confidence',
+                              style: pjs(
+                                  size: 12, color: const Color(0xFF64748B)),
+                            ),
+                            Text(
+                              '${(product.rankingConfidence * 100).toStringAsFixed(0)}%',
+                              style: pjs(
+                                size: 12,
+                                weight: FontWeight.w700,
+                                color: const Color(0xFF2563EB),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: product.rankingConfidence,
+                            minHeight: 6,
+                            backgroundColor: const Color(0xFFE2E8F0),
+                            color: ProofBuyColors.accent,
                           ),
                         ),
                       ],
@@ -243,6 +277,94 @@ class _ProductDetailsView extends ConsumerWidget {
                           size: 12.5,
                           color: const Color(0xFF1E293B),
                           height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Description block
+              if (description != null && description.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Description',
+                        style: pjs(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        description,
+                        style: pjs(
+                          size: 13,
+                          color: const Color(0xFF475569),
+                          height: 1.55,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Features list
+              if (features.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Key Features',
+                        style: pjs(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          color: const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...features.map(
+                        (f) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.check_circle_outline_rounded,
+                                size: 15,
+                                color: Color(0xFF10B981),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  f,
+                                  style: pjs(
+                                    size: 13,
+                                    color: const Color(0xFF334155),
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -301,8 +423,8 @@ class _ProductDetailsView extends ConsumerWidget {
                 const SizedBox(height: 16),
               ],
 
-              // Specifications
-              if (data.specs != null && data.specs!.isNotEmpty)
+              // Technical Specifications (expandable)
+              if (techSpecs.isNotEmpty)
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -318,28 +440,54 @@ class _ProductDetailsView extends ConsumerWidget {
                         color: const Color(0xFF0F172A),
                       ),
                     ),
-                    children: data.specs!.entries
-                        .map(
-                          (e) => ListTile(
-                            dense: true,
-                            title: Text(
-                              e.key.toString(),
-                              style: pjs(
-                                size: 12,
-                                color: const Color(0xFF475569),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: techSpecs.map((entry) {
+                            return Container(
+                              width: (MediaQuery.of(context).size.width -
+                                      72) /
+                                  2,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                    color: const Color(0xFFE2E8F0)),
                               ),
-                            ),
-                            trailing: Text(
-                              e.value.toString(),
-                              style: pjs(
-                                size: 12,
-                                weight: FontWeight.w600,
-                                color: const Color(0xFF0F172A),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    entry.key,
+                                    style: pjs(
+                                      size: 11,
+                                      color: const Color(0xFF94A3B8),
+                                      weight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    entry.value?.toString() ?? '—',
+                                    style: pjs(
+                                      size: 13,
+                                      weight: FontWeight.w700,
+                                      color: const Color(0xFF0F172A),
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
-                            ),
-                          ),
-                        )
-                        .toList(),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -382,6 +530,30 @@ class _ProductDetailsView extends ConsumerWidget {
                   ),
                 ),
               ),
+
+              // View on retailer site button
+              if (data.sourceUrl != null && data.sourceUrl!.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final uri = Uri.parse(data.sourceUrl!);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri,
+                          mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: Text(
+                    'View on retailer site',
+                    style: pjs(size: 14, weight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -394,7 +566,7 @@ class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 220,
+      height: 250,
       color: const Color(0xFFF1F5F9),
       child: const Center(
         child: Icon(Icons.shopping_bag_outlined,

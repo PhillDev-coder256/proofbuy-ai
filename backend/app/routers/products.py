@@ -2,10 +2,11 @@ from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.core.rate_limiter import limiter
 from app.database import get_db
 from app.models.product_result import ProductResult
 from app.models.shopping_session import ShoppingSession
@@ -20,7 +21,9 @@ router = APIRouter(prefix="/api/v1/products", tags=["products"])
 
 
 @router.get("/{session_id}", response_model=List[RankedProduct])
+@limiter.limit("30/minute")
 async def get_products_for_session(
+    request: Request,
     session_id: str,
     db: AsyncSession = Depends(get_db),
 ):

@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.core.rate_limiter import limiter
 from app.database import get_db
 from app.models.shopping_session import ShoppingSession
 from app.schemas.shopping import (
@@ -18,18 +19,20 @@ router = APIRouter(prefix="/api/v1/shopping", tags=["shopping"])
 
 
 @router.post("/brief", response_model=ShoppingBriefResponse)
+@limiter.limit("10/minute")
 async def submit_brief(
-    request: ShoppingBriefRequest,
+    request: Request,
+    body: ShoppingBriefRequest,
     db: AsyncSession = Depends(get_db),
 ):
     session = ShoppingSession(
-        brief_text=request.brief,
+        brief_text=body.brief,
         status="processing",
     )
     db.add(session)
     await db.flush()
 
-    requirements = await ai_service.extract_requirements(request.brief)
+    requirements = await ai_service.extract_requirements(body.brief)
     session.requirements_json = requirements.model_dump()
     session.status = "complete"
     session.updated_at = datetime.now(timezone.utc)

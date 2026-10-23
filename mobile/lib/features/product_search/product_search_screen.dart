@@ -8,9 +8,23 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../app/theme.dart';
 import '../../core/networking/repositories_providers.dart';
 import '../../core/widgets/error_widget.dart';
+import '../../shared/models/ranked_product.dart';
 import '../../shared/models/shopping_session.dart';
 
 part 'product_search_screen.g.dart';
+
+/// In-memory cache of fetched products for the current session.
+/// Used by [ProductComparisonNotifier] to avoid a duplicate API call.
+class _CachedProductsNotifier extends Notifier<List<RankedProduct>?> {
+  @override
+  List<RankedProduct>? build() => null;
+
+  void set(List<RankedProduct> products) => state = products;
+}
+
+final cachedProductsProvider =
+    NotifierProvider<_CachedProductsNotifier, List<RankedProduct>?>(
+        _CachedProductsNotifier.new);
 
 @riverpod
 class ProductSearchNotifier extends _$ProductSearchNotifier {
@@ -19,8 +33,10 @@ class ProductSearchNotifier extends _$ProductSearchNotifier {
     final session = await ref
         .read(shoppingRepositoryProvider)
         .getSession(sessionId);
-    // Pre-fetch products so they are cached for the comparison screen.
-    await ref.read(productsRepositoryProvider).getProducts(sessionId);
+    // Pre-fetch and cache products so the comparison screen skips the API call.
+    final products =
+        await ref.read(productsRepositoryProvider).getProducts(sessionId);
+    ref.read(cachedProductsProvider.notifier).set(products);
     return session;
   }
 }

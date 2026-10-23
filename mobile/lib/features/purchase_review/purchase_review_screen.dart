@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -85,6 +86,12 @@ class _PurchaseReviewView extends ConsumerWidget {
         .map((e) => e.key)
         .toList();
 
+    // Constraint summary counts
+    final passCount = product.constraintResults.values
+        .where((v) => v.toUpperCase() == 'PASS')
+        .length;
+    final totalCount = product.constraintResults.length;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -154,51 +161,192 @@ class _PurchaseReviewView extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      data.name,
-                      style: pjs(
-                        size: 18,
-                        weight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    if (priceText.isNotEmpty)
-                      Text(
-                        priceText,
-                        style: pjs(
-                          size: 24,
-                          weight: FontWeight.w800,
-                          color: const Color(0xFF2563EB),
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-
-                    if (data.merchant != null && data.merchant!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.store_outlined,
-                              size: 14, color: Color(0xFF64748B)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Sold & verified by ${data.merchant}',
-                            style: pjs(
-                              size: 12.5,
-                              color: const Color(0xFF64748B),
-                              weight: FontWeight.w500,
+                    // Image + name/price row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Thumbnail
+                        if (data.imageUrl != null &&
+                            data.imageUrl!.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: CachedNetworkImage(
+                              imageUrl: data.imageUrl!,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorWidget: (ctx, url, _) => Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                    Icons.shopping_bag_outlined,
+                                    size: 32,
+                                    color: Color(0xFF94A3B8)),
+                              ),
                             ),
+                          )
+                        else
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.shopping_bag_outlined,
+                                size: 32, color: Color(0xFF94A3B8)),
                           ),
-                        ],
-                      ),
-                    ],
+                        const SizedBox(width: 14),
+
+                        // Name + price + merchant
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data.name,
+                                style: pjs(
+                                  size: 16,
+                                  weight: FontWeight.w800,
+                                  color: const Color(0xFF0F172A),
+                                  height: 1.3,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              if (priceText.isNotEmpty)
+                                Text(
+                                  priceText,
+                                  style: pjs(
+                                    size: 20,
+                                    weight: FontWeight.w800,
+                                    color: const Color(0xFF2563EB),
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              if (data.merchant != null &&
+                                  data.merchant!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.store_outlined,
+                                        size: 13,
+                                        color: Color(0xFF64748B)),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        data.merchant!,
+                                        style: pjs(
+                                          size: 12,
+                                          color: const Color(0xFF64748B),
+                                          weight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+                    const Divider(color: Color(0xFFE2E8F0)),
+                    const SizedBox(height: 10),
+
+                    // Powered by PayPal row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.verified_user_rounded,
+                            size: 14, color: Color(0xFF0070BA)),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Powered by PayPal',
+                          style: pjs(
+                            size: 12,
+                            weight: FontWeight.w600,
+                            color: const Color(0xFF0070BA),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+
+              // Order Summary card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Order Summary',
+                      style: pjs(
+                        size: 14,
+                        weight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _SummaryRow(
+                      label: 'Product',
+                      value: data.name,
+                      valueMaxLines: 1,
+                    ),
+                    const SizedBox(height: 6),
+                    _SummaryRow(label: 'Quantity', value: '1'),
+                    const SizedBox(height: 6),
+                    _SummaryRow(
+                        label: 'Subtotal',
+                        value: priceText.isNotEmpty ? priceText : '—'),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Divider(color: Color(0xFFE2E8F0)),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total',
+                          style: pjs(
+                            size: 15,
+                            weight: FontWeight.w700,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                        Text(
+                          priceText.isNotEmpty ? priceText : '—',
+                          style: pjs(
+                            size: 18,
+                            weight: FontWeight.w800,
+                            color: const Color(0xFF2563EB),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
 
               // Constraint Verification
               Container(
@@ -211,13 +359,35 @@ class _PurchaseReviewView extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'AI Constraint Verification',
-                      style: pjs(
-                        size: 15,
-                        weight: FontWeight.w700,
-                        color: const Color(0xFF0F172A),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'AI Constraint Verification',
+                          style: pjs(
+                            size: 15,
+                            weight: FontWeight.w700,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                        if (totalCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '$passCount of $totalCount met',
+                              style: pjs(
+                                size: 11,
+                                weight: FontWeight.w700,
+                                color: const Color(0xFF16A34A),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     ...product.constraintResults.entries.map(
@@ -277,7 +447,16 @@ class _PurchaseReviewView extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
+
+              // PayPal redirect note
+              Text(
+                "You'll be redirected to PayPal to complete this payment securely.",
+                textAlign: TextAlign.center,
+                style: pjs(size: 13, color: const Color(0xFF64748B)),
+              ),
+
+              const SizedBox(height: 16),
 
               // Confirm and Pay button
               GestureDetector(
@@ -320,7 +499,16 @@ class _PurchaseReviewView extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+
+              // Security note
+              Text(
+                '256-bit SSL encryption. ProofBuy AI never stores your payment details.',
+                textAlign: TextAlign.center,
+                style: pjs(size: 11, color: const Color(0xFF9CA3AF)),
+              ),
+
+              const SizedBox(height: 6),
 
               TextButton(
                 onPressed: () => context.pop(),
@@ -337,6 +525,48 @@ class _PurchaseReviewView extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.valueMaxLines,
+  });
+
+  final String label;
+  final String value;
+  final int? valueMaxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 80,
+          child: Text(
+            label,
+            style: pjs(size: 13, color: const Color(0xFF64748B)),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: pjs(
+              size: 13,
+              weight: FontWeight.w600,
+              color: const Color(0xFF0F172A),
+            ),
+            maxLines: valueMaxLines,
+            overflow:
+                valueMaxLines != null ? TextOverflow.ellipsis : null,
+          ),
+        ),
+      ],
     );
   }
 }

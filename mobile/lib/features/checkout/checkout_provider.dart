@@ -53,15 +53,14 @@ class CheckoutNotifier extends _$CheckoutNotifier {
       }
     } on AppException catch (e) {
       // If payment is not yet approved in PayPal, revert to awaiting approval state with message
-      final msg = _messageFor(e);
-      if (e is ValidationException || msg.contains('422') || msg.contains('UNPROCESSABLE')) {
+      if (e is ValidationException || _messageFor(e).contains('422') || _messageFor(e).contains('UNPROCESSABLE')) {
         if (currentState is CheckoutAwaitingApproval) {
           state = currentState; // Keep awaiting approval UI active
         } else {
           state = CheckoutState.failure(message: 'PayPal payment not yet approved. Please open PayPal to approve.');
         }
       } else {
-        state = CheckoutState.failure(message: msg);
+        state = CheckoutState.failure(message: _messageFor(e));
       }
     } catch (e) {
       state = CheckoutState.failure(message: e.toString());
@@ -72,7 +71,7 @@ class CheckoutNotifier extends _$CheckoutNotifier {
         NetworkException(:final message) => message,
         ServerException(:final message) => message,
         NotFoundException(:final message) => message,
-        ValidationException(:final message) =>
+        ValidationException() =>
           'Payment not yet approved in PayPal. Please click "Open PayPal to Approve" first.',
         PaymentException(:final message) => message,
       };

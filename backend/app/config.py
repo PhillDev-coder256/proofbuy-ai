@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     paypal_client_id: str = ""
     paypal_client_secret: str = ""
     paypal_environment: str = "sandbox"
-    cors_allowed_origins: List[str] = ["http://localhost:3000"]
+    cors_allowed_origins: List[str] = ["http://localhost:3000", "http://localhost:8080", "http://10.0.2.2:8000"]
     jwt_secret: str = "change-me-in-production-use-a-long-random-string"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7  # 7 days

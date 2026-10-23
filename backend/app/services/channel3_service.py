@@ -3,12 +3,16 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 import httpx
+from cachetools import TTLCache
 
 from app.schemas.product import NormalizedProduct
 from app.core.exceptions import Channel3AuthError, Channel3RateLimitError, Channel3ServiceError
 from app.config import settings
 
 logger = logging.getLogger("proofbuy.channel3")
+
+# Module-level TTL cache — 5 minute TTL, 256 entries
+_product_cache: TTLCache = TTLCache(maxsize=256, ttl=300)
 
 # Module-level mock products used when no API key is configured
 MOCK_PRODUCTS: List[NormalizedProduct] = [
@@ -249,10 +253,19 @@ def get_channel3_service() -> Channel3Service:
 async def search_products(query: str, session_id: str) -> list:
     """Backward-compatible wrapper returning the dict shape the products router expects.
     Includes ALL available product data: image, description, full specs, source URL.
+    Results are cached by query for 5 minutes to avoid redundant API calls.
     """
+    cache_key = query.lower().strip()
+    if cache_key in _product_cache:
+        # Re-attach session_id since it's caller-specific
+        return [
+            {**item, "session_id": session_id}
+            for item in _product_cache[cache_key]
+        ]
+
     svc = get_channel3_service()
     products = await svc.search_products(query)
-    return [
+    result = [
         {
             "channel3_product_id": p.channel3_product_id,
             "name": p.name,
@@ -261,8 +274,8 @@ async def search_products(query: str, session_id: str) -> list:
             "merchant": p.merchant,
             "specs_json": p.specs,
             "source_url": p.source_url,
-            "image_url": p.image_url,          # ← was missing
-            "data_complete": p.data_complete,   # ← was missing
+            "image_url": p.image_url,
+            "data_complete": p.data_complete,
             "constraint_results_json": None,
             "ranking_score": None,
             "retrieved_at": p.retrieved_at.isoformat(),
@@ -270,3 +283,9 @@ async def search_products(query: str, session_id: str) -> list:
         }
         for p in products
     ]
+    # Cache without session_id so other sessions benefit from the same data
+    _product_cache[cache_key] = [
+        {k: v for k, v in item.items() if k != "session_id"}
+        for item in result
+    ]
+    return result

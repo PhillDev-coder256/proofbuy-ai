@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.core.rate_limiter import limiter
 from app.database import get_db
 from app.models.product_result import ProductResult
 from app.models.purchase_record import PurchaseRecord
@@ -27,18 +28,20 @@ router = APIRouter(prefix="/api/v1/checkout", tags=["checkout"])
 
 
 @router.post("/create", response_model=CheckoutCreateResponse)
+@limiter.limit("20/minute")
 async def create_checkout(
-    request: CheckoutCreateRequest,
+    request: Request,
+    body: CheckoutCreateRequest,
     db: AsyncSession = Depends(get_db),
     paypal_service: PayPalService = Depends(get_paypal_service),
 ):
     # a. Load ProductResult — 404 if not found
     result = await db.execute(
-        select(ProductResult).where(ProductResult.id == request.product_result_id)
+        select(ProductResult).where(ProductResult.id == body.product_result_id)
     )
     product = result.scalars().first()
     if not product:
-        raise NotFoundError(f"Product '{request.product_result_id}' not found")
+        raise NotFoundError(f"Product '{body.product_result_id}' not found")
 
     # b. Validate price and currency
     if not product.price or float(product.price) <= 0:
@@ -96,21 +99,23 @@ async def create_checkout(
 
 
 @router.post("/capture", response_model=CheckoutCaptureResponse)
+@limiter.limit("20/minute")
 async def capture_checkout(
-    request: CheckoutCaptureRequest,
+    request: Request,
+    body: CheckoutCaptureRequest,
     db: AsyncSession = Depends(get_db),
     paypal_service: PayPalService = Depends(get_paypal_service),
 ):
     # a. Load PurchaseRecord — 404 if not found
     result = await db.execute(
-        select(PurchaseRecord).where(PurchaseRecord.id == request.purchase_id)
+        select(PurchaseRecord).where(PurchaseRecord.id == body.purchase_id)
     )
     purchase = result.scalars().first()
     if not purchase:
-        raise NotFoundError(f"Purchase record '{request.purchase_id}' not found")
+        raise NotFoundError(f"Purchase record '{body.purchase_id}' not found")
 
     # b. Verify order_id matches
-    if purchase.paypal_order_id != request.order_id:
+    if purchase.paypal_order_id != body.order_id:
         raise ValidationError("order_id does not match purchase record")
 
     # c. Idempotency: already captured
@@ -132,7 +137,7 @@ async def capture_checkout(
     # Note: PayPalService handles ORDER_ALREADY_CAPTURED internally and returns a
     # PayPalCaptureResult — it never raises PayPalDuplicateCaptureError.
     try:
-        capture_result = await paypal_service.capture_order(request.order_id)
+        capture_result = await paypal_service.capture_order(body.order_id)
     except (PayPalInstrumentDeclinedError, PayPalServiceError):
         purchase.status = "failed"
         purchase.updated_at = datetime.now(timezone.utc)

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.rate_limiter import limiter
 from app.database import get_db
 from app.schemas.auth import RegisterRequest, LoginRequest, AuthResponse, UserResponse
 from app.services.auth_service import (
@@ -16,18 +17,23 @@ router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=AuthResponse, status_code=201)
-async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register(
+    request: Request,
+    body: RegisterRequest,
+    db: AsyncSession = Depends(get_db),
+):
     # Check email not already taken
-    existing = await get_user_by_email(db, request.email)
+    existing = await get_user_by_email(db, body.email)
     if existing:
         raise ValidationError("An account with this email already exists")
 
     user = await create_user(
         db,
-        full_name=request.full_name,
-        email=request.email,
-        password=request.password,
-        country=request.country,
+        full_name=body.full_name,
+        email=body.email,
+        password=body.password,
+        country=body.country,
     )
 
     token = create_access_token(user.id, user.email)
@@ -41,8 +47,13 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
 
 
 @router.post("/login", response_model=AuthResponse)
-async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
-    user = await authenticate_user(db, request.email, request.password)
+@limiter.limit("5/minute")
+async def login(
+    request: Request,
+    body: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    user = await authenticate_user(db, body.email, body.password)
     if not user:
         raise ValidationError("Invalid email or password")
 
@@ -63,7 +74,6 @@ async def get_me(
     # (avoids OAuth2 dependency complexity for the hackathon)
 ):
     """Returns the current user. Token passed as Authorization: Bearer <token>."""
-    from fastapi import Request
     # This is handled below via dependency — kept simple for hackathon scope
     raise NotFoundError("Use Authorization header: Bearer <token>")
 

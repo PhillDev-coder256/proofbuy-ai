@@ -5,6 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_config.dart';
 import '../errors/app_exception.dart';
 
+/// Global offline signal. True when the last request failed with a
+/// connection error or timeout. Reset to false on the next successful response.
+final ValueNotifier<bool> isOfflineNotifier = ValueNotifier<bool>(false);
+
 /// Creates and configures the shared [Dio] instance.
 Dio createDio() {
   final instance = Dio(
@@ -25,9 +29,17 @@ Dio createDio() {
         handler.next(options);
       },
       onResponse: (response, handler) {
+        isOfflineNotifier.value = false;
         handler.next(response);
       },
       onError: (DioException e, handler) {
+        final mapped = _mapToAppException(e);
+        // Update offline indicator for connection-level failures
+        if (e.type == DioExceptionType.connectionError ||
+            e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout) {
+          isOfflineNotifier.value = true;
+        }
         // Reject with the mapped AppException directly so callers can
         // catch `on AppException` without unwrapping DioException.error.
         handler.reject(
@@ -35,7 +47,7 @@ Dio createDio() {
             requestOptions: e.requestOptions,
             response: e.response,
             type: e.type,
-            error: _mapToAppException(e),
+            error: mapped,
             message: e.message,
             stackTrace: e.stackTrace,
           ),

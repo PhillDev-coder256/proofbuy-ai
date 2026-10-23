@@ -1,9 +1,12 @@
+import 'dart:math' show min;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../app/theme.dart';
 import '../../core/networking/repositories_providers.dart';
 import '../../core/widgets/error_widget.dart';
 import '../../core/widgets/loading_widget.dart';
@@ -41,92 +44,203 @@ class TransactionResultScreen extends ConsumerWidget {
     final asyncTx = ref.watch(transactionResultProvider(purchaseId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Payment Verified')),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: Text(
+          'Payment Confirmed',
+          style: pjs(
+            size: 18,
+            weight: FontWeight.w700,
+            color: const Color(0xFF0F172A),
+          ),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
       body: asyncTx.when(
         loading: () => const LoadingWidget(message: 'Loading transaction…'),
         error: (error, _) => ProofBuyErrorWidget(
           message: error.toString(),
           onRetry: () => ref.invalidate(transactionResultProvider(purchaseId)),
         ),
-        data: (tx) => _TransactionSuccessView(transaction: tx),
+        data: (tx) => _AnimatedSuccessView(transaction: tx),
       ),
     );
   }
 }
 
-class _TransactionSuccessView extends StatelessWidget {
-  const _TransactionSuccessView({required this.transaction});
+// ─────────────────────────────────────────────────────────────────────────────
+// Animated success view
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AnimatedSuccessView extends StatefulWidget {
+  const _AnimatedSuccessView({required this.transaction});
 
   final AppTransaction transaction;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  State<_AnimatedSuccessView> createState() => _AnimatedSuccessViewState();
+}
 
-    final verifiedAtText = transaction.verifiedAt != null
-        ? DateFormat.yMMMMd().add_jm().format(transaction.verifiedAt!)
+class _AnimatedSuccessViewState extends State<_AnimatedSuccessView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _scaleAnim = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticOut,
+    );
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _controller.forward());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tx = widget.transaction;
+
+    final verifiedAtText = tx.verifiedAt != null
+        ? DateFormat.yMMMMd().add_jm().format(tx.verifiedAt!)
         : '—';
+
+    final createdAtText =
+        DateFormat.yMMMMd().add_jm().format(tx.createdAt);
+
+    final shortId = tx.id.length > 8
+        ? '${tx.id.substring(0, min(8, tx.id.length))}...'
+        : tx.id;
+
+    final isCapture = tx.status.toLowerCase() == 'captured';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Success icon
-          const Icon(
-            Icons.check_circle,
-            color: Colors.green,
-            size: 80,
+          // Animated success circle
+          Center(
+            child: ScaleTransition(
+              scale: _scaleAnim,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: const BoxDecoration(
+                  color: ProofBuyColors.pass,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_rounded,
+                  color: Colors.white,
+                  size: 44,
+                ),
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Heading
           Text(
-            'Payment Verified!',
+            'Payment Successful!',
             textAlign: TextAlign.center,
-            style: theme.textTheme.headlineMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: pjs(
+              size: 24,
+              weight: FontWeight.w800,
+              color: const Color(0xFF0F172A),
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
+
+          // Subtitle
+          Text(
+            'Your order is confirmed and payment has been captured.',
+            textAlign: TextAlign.center,
+            style: pjs(size: 14, color: const Color(0xFF64748B)),
+          ),
+          const SizedBox(height: 28),
 
           // Transaction details card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _DetailRow(
-                    label: 'Transaction ID',
-                    value: transaction.id,
-                  ),
-                  const Divider(height: 20),
-                  _DetailRow(
-                    label: 'Status',
-                    value: transaction.status.toUpperCase(),
-                  ),
-                  const Divider(height: 20),
-                  _DetailRow(
-                    label: 'Verified at',
-                    value: verifiedAtText,
-                  ),
-                ],
-              ),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 16,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                _DetailRow(
+                  label: 'Transaction ID',
+                  value: shortId,
+                ),
+                const Divider(height: 24, color: Color(0xFFE2E8F0)),
+                _DetailRow(
+                  label: 'Status',
+                  value: tx.status.toUpperCase(),
+                  valueColor: isCapture
+                      ? const Color(0xFF16A34A)
+                      : const Color(0xFFD97706),
+                ),
+                const Divider(height: 24, color: Color(0xFFE2E8F0)),
+                _DetailRow(
+                  label: 'Verified',
+                  value: verifiedAtText,
+                ),
+                const Divider(height: 24, color: Color(0xFFE2E8F0)),
+                _DetailRow(
+                  label: 'Created',
+                  value: createdAtText,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 32),
 
-          // View History button
+          // Continue Shopping button
           ElevatedButton(
-            onPressed: () => context.go('/history'),
-            child: const Text('View History'),
+            onPressed: () => context.go('/brief'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ProofBuyColors.primary,
+            ),
+            child: Text(
+              'Continue Shopping',
+              style: pjs(
+                  size: 16,
+                  weight: FontWeight.w700,
+                  color: Colors.white),
+            ),
           ),
           const SizedBox(height: 12),
 
-          // Back to Shopping button
+          // View Order History button
           TextButton(
-            onPressed: () => context.go('/brief'),
-            child: const Text('Back to Shopping'),
+            onPressed: () => context.go('/history'),
+            child: Text(
+              'View Order History',
+              style: pjs(
+                size: 14,
+                weight: FontWeight.w600,
+                color: const Color(0xFF64748B),
+              ),
+            ),
           ),
         ],
       ),
@@ -135,14 +249,18 @@ class _TransactionSuccessView extends StatelessWidget {
 }
 
 class _DetailRow extends StatelessWidget {
-  const _DetailRow({required this.label, required this.value});
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   final String label;
   final String value;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -150,8 +268,7 @@ class _DetailRow extends StatelessWidget {
           flex: 2,
           child: Text(
             label,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: Colors.grey[600]),
+            style: pjs(size: 13, color: const Color(0xFF64748B)),
           ),
         ),
         const SizedBox(width: 8),
@@ -159,8 +276,12 @@ class _DetailRow extends StatelessWidget {
           flex: 3,
           child: Text(
             value,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(fontWeight: FontWeight.w500),
+            style: pjs(
+              size: 13,
+              weight: FontWeight.w600,
+              color: valueColor ?? const Color(0xFF0F172A),
+            ),
+            textAlign: TextAlign.end,
           ),
         ),
       ],

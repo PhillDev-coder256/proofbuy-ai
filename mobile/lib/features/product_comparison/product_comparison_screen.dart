@@ -10,6 +10,7 @@ import '../../core/widgets/loading_widget.dart';
 import '../../shared/models/ranked_product.dart';
 import '../../shared/models/shopping_session.dart';
 import '../product_details/selected_product_provider.dart';
+import '../product_search/product_search_screen.dart';
 import 'product_card.dart';
 
 part 'product_comparison_screen.g.dart';
@@ -18,6 +19,9 @@ part 'product_comparison_screen.g.dart';
 class ProductComparisonNotifier extends _$ProductComparisonNotifier {
   @override
   Future<List<RankedProduct>> build(String sessionId) async {
+    // Use in-memory cache if already populated by ProductSearchNotifier
+    final cached = ref.read(cachedProductsProvider);
+    if (cached != null && cached.isNotEmpty) return cached;
     return ref.read(productsRepositoryProvider).getProducts(sessionId);
   }
 }
