@@ -247,18 +247,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Password reset — coming soon',
-                                style: pjs(size: 13, color: Colors.white)),
-                            backgroundColor: const Color(0xFF6C47FF),
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                        );
-                      },
+                      onTap: () => context.push('/forgot-password'),
                       child: Text(
                         'Forgot password?',
                         style: pjs(

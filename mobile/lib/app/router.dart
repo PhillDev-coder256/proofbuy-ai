@@ -5,6 +5,8 @@ import '../features/checkout/checkout_cancel_screen.dart';
 import '../features/checkout/checkout_screen.dart';
 import '../features/auth/signup_screen.dart';
 import '../features/auth/signin_screen.dart';
+import '../features/auth/forgot_password_screen.dart';
+import '../features/auth/reset_password_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/product_comparison/product_comparison_screen.dart';
 import '../features/product_details/product_details_screen.dart';
@@ -59,6 +61,20 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/signin',
       builder: (context, state) => const SignInScreen(),
+    ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ResetPasswordScreen(
+          email: extra['email'] as String? ?? '',
+          devOtp: extra['dev_otp'] as String?,
+        );
+      },
     ),
     GoRoute(
       path: '/brief',
