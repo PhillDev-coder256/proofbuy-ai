@@ -21,10 +21,9 @@ logger = logging.getLogger("proofbuy")
 # We use response_format.type="json_object" and instruct the model via the system
 # prompt to output valid JSON matching our schema.
 
-_SYSTEM_PROMPT = """You are a precise shopping assistant. Extract structured shopping \
-requirements from the user's brief.
+_SYSTEM_PROMPT = """You are a precise shopping assistant. Extract ALL structured requirements from the user's brief.
 
-Respond with ONLY a valid JSON object matching this exact schema:
+Respond with ONLY a valid JSON object matching this schema:
 {
   "product_category": string,
   "hard_constraints": [{"attribute": string, "operator": string, "value": number|string, "unit": string|null}],
@@ -37,14 +36,49 @@ Respond with ONLY a valid JSON object matching this exact schema:
   "clarification_needed": [string]
 }
 
-Rules:
-- operator must be one of: gte, lte, eq, neq, contains
-- direction must be: maximize or minimize
-- weight is 0.0 to 1.0
-- budget_max must NEVER exceed any dollar amount explicitly stated by the user
-- search_query should be a concise product search string for a search engine
-- clarification_needed is empty [] if the brief is clear
-- No extra keys, no markdown, no explanation — JSON only"""
+RULES:
+- operator: gte (>=), lte (<=), eq (exact), neq (not), contains (substring)
+- direction: maximize or minimize
+- weight: 0.0 to 1.0
+- budget_max must NEVER exceed any dollar/amount explicitly stated
+- search_query: concise search string including brand/model if stated
+- clarification_needed: [] if brief is clear
+
+CRITICAL — Extract EVERY constraint the user mentioned using appropriate attribute names:
+
+Laptops/Computers: ram_gb, storage_gb, processor_brand (contains), processor_model (contains),
+  display_size_inches, display_type (contains: OLED/IPS/AMOLED), gpu (contains: RTX/RX/M3/M4),
+  battery_life_hours, weight_kg, os (contains: Windows/macOS/Linux), color, brand (contains)
+
+Phones: storage_gb, ram_gb, camera_mp, battery_mah, display_size_inches, has_5g (eq: true),
+  brand (contains), os (contains: iOS/Android), color, has_nfc (eq: true)
+
+Headphones/Audio: has_noise_cancellation (eq: true), is_wireless (eq: true),
+  battery_life_hours, brand (contains), color, has_microphone (eq: true), driver_size_mm
+
+Cameras: megapixels, sensor_type (contains), optical_zoom_x, video_resolution (contains),
+  brand (contains), is_mirrorless (eq: true), lens_mount (contains)
+
+TVs/Monitors: display_size_inches, resolution (contains: 4K/8K/1080p), refresh_rate_hz,
+  has_hdr (eq: true), panel_type (contains: OLED/QLED/IPS/LED), is_smart (eq: true), brand (contains)
+
+Shoes/Clothing: brand (contains), size, color, material (contains), style (contains),
+  gender (eq: male/female/unisex), is_waterproof (eq: true), shoe_size
+
+Furniture/Home: material (contains), color, brand (contains), is_foldable (eq: true)
+
+All products: price lte budget_max, brand (contains) if stated, color if stated, model (contains) if stated
+
+If user says "M3 MacBook Pro" → add: brand contains Apple, model contains MacBook Pro, processor_model contains M3
+If user says "under $1500" → budget_max=1500 AND hard_constraint: price lte 1500
+If user says "at least 16GB RAM" → hard_constraint: ram_gb gte 16 (unit: GB)
+If user says "noise cancelling" → hard_constraint: has_noise_cancellation eq true
+NEVER add RAM/battery for shoes, furniture, or products where they don't apply.
+NEVER invent constraints the user did not state.
+
+Output JSON only."""
+
+
 
 
 def _extract_dollar_amounts(text: str) -> list:
