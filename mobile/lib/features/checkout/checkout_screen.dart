@@ -173,30 +173,84 @@ class _AwaitingApprovalView extends ConsumerWidget {
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Open PayPal', style: pjs(size: 16, weight: FontWeight.w700, color: const Color(0xFF0F172A))),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Open PayPal',
+              style: pjs(size: 16, weight: FontWeight.w700,
+                  color: const Color(0xFF0F172A))),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Could not open browser automatically. Please copy this URL and open it manually in your browser:',
+                'Could not open browser automatically. Long-press the link below to copy it, then paste into your browser:',
                 style: pjs(size: 13, color: const Color(0xFF475569), height: 1.5),
               ),
               const SizedBox(height: 12),
-              SelectableText(
-                url,
-                style: pjs(size: 11, color: const Color(0xFF0070BA), weight: FontWeight.w500),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  url.isNotEmpty ? url : 'URL not available',
+                  style: pjs(size: 11, color: const Color(0xFF0070BA),
+                      weight: FontWeight.w500),
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: Text('Close', style: pjs(size: 14, color: const Color(0xFF6C47FF), weight: FontWeight.w600)),
+              child: Text('Close',
+                  style: pjs(size: 14, color: const Color(0xFF6C47FF),
+                      weight: FontWeight.w600)),
             ),
           ],
         ),
       );
+    }
+  }
+
+  Future<void> _confirmCapture(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.check_circle_outline_rounded,
+                color: Color(0xFF059669), size: 22),
+            const SizedBox(width: 10),
+            Text('Confirm Payment',
+                style: pjs(size: 16, weight: FontWeight.w700,
+                    color: const Color(0xFF0F172A))),
+          ],
+        ),
+        content: Text(
+          'Have you completed the PayPal payment in the browser? We will verify with PayPal before confirming your order.',
+          style: pjs(size: 13, color: const Color(0xFF475569), height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Not yet',
+                style: pjs(size: 14, color: const Color(0xFF6B7280))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Yes, verify now',
+                style: pjs(size: 14, weight: FontWeight.w700,
+                    color: const Color(0xFF059669))),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      ref.read(checkoutProvider.notifier).captureOrder(orderId, purchaseId);
     }
   }
 
@@ -328,9 +382,7 @@ class _AwaitingApprovalView extends ConsumerWidget {
 
           // Secondary Confirm Payment Button
           OutlinedButton(
-            onPressed: () => ref
-                .read(checkoutProvider.notifier)
-                .captureOrder(orderId, purchaseId),
+            onPressed: () => _confirmCapture(context, ref),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(50),
               side: const BorderSide(color: Color(0xFFCBD5E1)),

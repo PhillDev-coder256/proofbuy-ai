@@ -222,8 +222,12 @@ void main() {
       await tester.pumpWidget(buildCheckoutWidget(repo: mockRepo));
       await tester.pumpAndSettle(); // reaches AwaitingApproval
 
-      // Tap 'I've completed payment' to trigger capture.
+      // Tap 'I've completed payment' — this now shows a confirmation dialog.
       await tester.tap(find.text("I've completed payment"));
+      await tester.pumpAndSettle(); // dialog appears
+
+      // Confirm in the dialog
+      await tester.tap(find.text('Yes, verify now'));
       await tester.pumpAndSettle(); // capture completes → CheckoutSuccess → navigate
 
       // After navigation the transaction screen shows the tx id.
@@ -253,8 +257,11 @@ void main() {
       await tester.pumpWidget(buildCheckoutWidget(repo: mockRepo));
       await tester.pumpAndSettle(); // reaches AwaitingApproval
 
+      // Tap 'I've completed payment' → dialog → confirm
       await tester.tap(find.text("I've completed payment"));
-      await tester.pumpAndSettle();
+      await tester.pumpAndSettle(); // dialog appears
+      await tester.tap(find.text('Yes, verify now'));
+      await tester.pumpAndSettle(); // capture fails → failure state
 
       // Must stay on CheckoutScreen showing an error, NOT navigate away.
       expect(find.byType(ProofBuyErrorWidget), findsOneWidget);

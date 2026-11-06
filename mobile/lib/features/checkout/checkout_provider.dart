@@ -11,13 +11,27 @@ part 'checkout_provider.g.dart';
 /// SECURITY INVARIANT: [CheckoutState.success] is ONLY set when the backend
 /// capture response has `verified == true`. A `verified == false` response
 /// always transitions to [CheckoutState.failure].
-@riverpod
+///
+/// keepAlive: true — the state MUST survive navigation (back/forward) so that
+/// pressing "I've completed payment", going back, and returning does NOT
+/// reset the order and retrigger createOrder.
+@Riverpod(keepAlive: true)
 class CheckoutNotifier extends _$CheckoutNotifier {
   @override
   CheckoutState build() => const CheckoutState.idle();
 
+  /// Reset to idle — call when starting a brand new checkout.
+  void reset() => state = const CheckoutState.idle();
+
   /// Creates a PayPal order for the given [productResultId].
+  /// Guard: does nothing if an order is already in progress or complete.
   Future<void> createOrder(String productResultId) async {
+    // Already have an order — don't create another
+    if (state is CheckoutAwaitingApproval ||
+        state is CheckoutCapturing ||
+        state is CheckoutSuccess) {
+      return;
+    }
     state = const CheckoutState.creatingOrder();
     try {
       final response = await ref
