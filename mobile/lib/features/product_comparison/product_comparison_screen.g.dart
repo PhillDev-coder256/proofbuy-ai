@@ -53,7 +53,7 @@ final class ProductComparisonNotifierProvider
 }
 
 String _$productComparisonNotifierHash() =>
-    r'93afd0956e83a4aa30dff90ef05b535537375e49';
+    r'61c0e0b663090fb3edd37514d45b949c5c6033a5';
 
 final class ProductComparisonNotifierFamily extends $Family
     with

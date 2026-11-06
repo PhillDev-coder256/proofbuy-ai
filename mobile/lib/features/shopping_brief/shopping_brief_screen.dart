@@ -54,19 +54,19 @@ const _quickCategories = [
 const _examples = [
   _ExampleSearch(
     icon: Icons.laptop_mac_rounded,
-    query: 'A gaming laptop under \$1200 with 16GB RAM',
+    query: 'M3 MacBook Pro under \$1500 with 16GB RAM',
     iconBg: Color(0xFFEFF6FF),
     iconColor: Color(0xFF2563EB),
   ),
   _ExampleSearch(
     icon: Icons.headphones_rounded,
-    query: 'Noise cancelling headphones for travel',
+    query: 'Sony WH-1000XM5 noise cancelling headphones',
     iconBg: Color(0xFFE0F2FE),
     iconColor: Color(0xFF0284C7),
   ),
   _ExampleSearch(
     icon: Icons.smartphone_rounded,
-    query: 'A good smartphone for photography under \$800',
+    query: 'Sony Alpha mirrorless camera kit under \$1000',
     iconBg: Color(0xFFECFDF5),
     iconColor: Color(0xFF059669),
   ),
@@ -143,7 +143,7 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
 
   void _submit([String? override]) {
     final text = override ?? _controller.text.trim();
-    if (text.length < 10) return;
+    if (text.length < 5) return;
     _focusNode.unfocus();
     if (override != null) _controller.text = override;
     ref.read(shoppingBriefProvider.notifier).submitBrief(text);
@@ -196,6 +196,10 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 12),
+
+                      // ── Hackathon Demo Banner ──────────────────────────
+                      _HackathonBadgeCard(),
                       const SizedBox(height: 16),
 
                       // ── Hero header ──────────────────────────────────────
@@ -222,7 +226,7 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
 
                       // ── Try an example (Responsive Horizontal Carousel) ──
                       _SectionHeader(
-                        title: 'Try an example',
+                        title: '⚡ Hackathon Demo Briefs',
                         actionLabel: 'See more',
                         onAction: () {},
                       ),
@@ -267,6 +271,85 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Hackathon Demo Badge Card
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _HackathonBadgeCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF003087), Color(0xFF0070BA)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x200070BA),
+            blurRadius: 10,
+            offset: Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.emoji_events_rounded,
+                color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'PayPal AI Hackathon • Sandbox Live',
+                  style: pjs(
+                    size: 13,
+                    weight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'App: payproof ai • Verified Sandbox API',
+                  style: pjs(
+                    size: 11,
+                    color: Colors.white70,
+                    weight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10B981),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'LIVE',
+              style: pjs(
+                size: 10,
+                weight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // App bar
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -284,7 +367,6 @@ class _HomeAppBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          // Logo image
           Image.asset(
             'assets/images/logo.png',
             width: 36,
@@ -304,8 +386,6 @@ class _HomeAppBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-
-          // Wordmark & high-contrast tagline
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -343,7 +423,7 @@ class _HomeAppBar extends StatelessWidget {
 
           const Spacer(),
 
-          // Notification bell with 1px border
+          // Notification bell
           Stack(
             children: [
               Container(
@@ -431,7 +511,6 @@ class _HeroRow extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Greeting & Description
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,10 +550,7 @@ class _HeroRow extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(width: 12),
-
-            // Robot illustration container
             SizedBox(
               width: illustrationSize,
               height: illustrationSize,
@@ -535,7 +611,7 @@ class _SearchBoxState extends State<_SearchBox> {
 
   @override
   Widget build(BuildContext context) {
-    final hasText = widget.controller.text.trim().length >= 10;
+    final hasText = widget.controller.text.trim().length >= 3;
 
     return Container(
       decoration: BoxDecoration(
@@ -581,7 +657,7 @@ class _SearchBoxState extends State<_SearchBox> {
                   ),
                   decoration: InputDecoration(
                     hintText:
-                        'e.g. "A laptop for video editing under \$1000 with 16GB RAM and good battery life"',
+                        'e.g. "M3 MacBook Pro under \$1500 with 16GB RAM"',
                     hintStyle: pjs(
                       size: 13,
                       color: const Color(0xFF94A3B8),
@@ -602,7 +678,6 @@ class _SearchBoxState extends State<_SearchBox> {
                 padding: const EdgeInsets.only(right: 12, bottom: 12),
                 child: Row(
                   children: [
-                    // Microphone button
                     _CircleIconBtn(
                       icon: Icons.mic_outlined,
                       color: const Color(0xFF64748B),
@@ -611,8 +686,6 @@ class _SearchBoxState extends State<_SearchBox> {
                       onTap: () {},
                     ),
                     const SizedBox(width: 8),
-
-                    // Submit button
                     _CircleIconBtn(
                       icon: widget.isLoading
                           ? Icons.hourglass_empty_rounded
@@ -782,7 +855,7 @@ class _SectionHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Example Search Cards (Responsive Horizontal Carousel)
+// Example Search Cards
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ExampleCards extends StatelessWidget {
@@ -821,7 +894,6 @@ class _ExampleCards extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Icon container
                     Container(
                       width: 44,
                       height: 44,
@@ -835,12 +907,9 @@ class _ExampleCards extends StatelessWidget {
                         color: item.iconColor,
                       ),
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Query text
                     SizedBox(
-                      height: 52, // Fixed height for 3-line consistency
+                      height: 52,
                       child: Text(
                         item.query,
                         maxLines: 3,
@@ -853,10 +922,7 @@ class _ExampleCards extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
-                    // Bottom arrow
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -934,7 +1000,7 @@ class _FeaturedGrid extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Why Choose ProofBuy AI (Responsive Cards)
+// Why Choose ProofBuy AI
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _WhySection extends StatelessWidget {
@@ -952,8 +1018,6 @@ class _WhySection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-
-        // Horizontal scrollable card list for perfect mobile readability
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),

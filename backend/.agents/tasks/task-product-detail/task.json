@@ -1,0 +1,7 @@
+{
+  "task_id": "task-product-detail",
+  "task_description": "Extend ProofBuy AI with a full product detail experience: (1) backend — enrich NormalizedProduct with all images/offers/ratings/materials/features, update _normalize() to parse all Channel3 fields, enrich mock data, add GET /detail/{id} endpoint; (2) Flutter — add new Freezed models, ProductDetailRepository, and rebuild product_details_screen with an image gallery carousel, all-offers scroll, full description/features/materials, and shimmer loading.",
+  "status": "pending",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

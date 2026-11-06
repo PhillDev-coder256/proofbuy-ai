@@ -11,7 +11,7 @@ part of 'checkout_provider.dart';
 /// Drives the PayPal checkout state machine.
 ///
 /// SECURITY INVARIANT: [CheckoutState.success] is ONLY set when the backend
-/// capture response has `verified == true`.  A `verified == false` response
+/// capture response has `verified == true`. A `verified == false` response
 /// always transitions to [CheckoutState.failure].
 
 @ProviderFor(CheckoutNotifier)
@@ -20,14 +20,14 @@ final checkoutProvider = CheckoutNotifierProvider._();
 /// Drives the PayPal checkout state machine.
 ///
 /// SECURITY INVARIANT: [CheckoutState.success] is ONLY set when the backend
-/// capture response has `verified == true`.  A `verified == false` response
+/// capture response has `verified == true`. A `verified == false` response
 /// always transitions to [CheckoutState.failure].
 final class CheckoutNotifierProvider
     extends $NotifierProvider<CheckoutNotifier, CheckoutState> {
   /// Drives the PayPal checkout state machine.
   ///
   /// SECURITY INVARIANT: [CheckoutState.success] is ONLY set when the backend
-  /// capture response has `verified == true`.  A `verified == false` response
+  /// capture response has `verified == true`. A `verified == false` response
   /// always transitions to [CheckoutState.failure].
   CheckoutNotifierProvider._()
     : super(
@@ -56,12 +56,12 @@ final class CheckoutNotifierProvider
   }
 }
 
-String _$checkoutNotifierHash() => r'd4150189114ad724991451a4facfbdc21ed4241a';
+String _$checkoutNotifierHash() => r'ed7386a83cea920f60262a2dee5f3aea99998eb8';
 
 /// Drives the PayPal checkout state machine.
 ///
 /// SECURITY INVARIANT: [CheckoutState.success] is ONLY set when the backend
-/// capture response has `verified == true`.  A `verified == false` response
+/// capture response has `verified == true`. A `verified == false` response
 /// always transitions to [CheckoutState.failure].
 
 abstract class _$CheckoutNotifier extends $Notifier<CheckoutState> {
