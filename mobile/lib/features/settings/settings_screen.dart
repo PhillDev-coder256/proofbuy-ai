@@ -262,11 +262,10 @@ class SettingsScreen extends ConsumerWidget {
               );
               if (confirm == true) {
                 await ref.read(authRepositoryProvider).logout();
-                ref
-                    .read(currentUserProvider.notifier)
-                    .setUser(null);
+                ref.read(currentUserProvider.notifier).setUser(null);
                 if (context.mounted) {
-                  context.go('/onboarding');
+                  // After logout go to signin — onboarding already seen
+                  context.go('/signin');
                 }
               }
             },

@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/splash_screen.dart';
+import '../features/auth/session_provider.dart';
 import '../features/checkout/checkout_return_screen.dart';
 import '../features/checkout/checkout_cancel_screen.dart';
 import '../features/checkout/checkout_screen.dart';
@@ -18,41 +20,33 @@ import '../features/shopping_brief/shopping_brief_screen.dart';
 import '../features/transaction_history/history_screen.dart';
 import '../features/transaction_result/transaction_result_screen.dart';
 
-/// Whether the user has not yet completed onboarding.
-/// Resets to false after the first navigation so subsequent
-/// cold-starts go directly to the shopping brief.
-bool _firstLaunch = true;
-
 final appRouter = GoRouter(
   initialLocation: '/',
   // Handle proofbuy:// deep links: strip the custom scheme and map
   // to an internal path GoRouter can match.
-  // e.g. proofbuy://checkout/return?token=XYZ  → /checkout/return?token=XYZ
-  //      proofbuy://checkout/cancel             → /checkout/cancel
   redirect: (context, state) {
     final uri = state.uri;
     if (uri.scheme == 'proofbuy') {
-      // Reconstruct as a regular path with query parameters preserved.
       final path = uri.path.startsWith('/') ? uri.path : '/${uri.path}';
       final query = uri.query.isNotEmpty ? '?${uri.query}' : '';
       return '$path$query';
     }
-    return null; // no redirect needed for normal paths
+    return null;
   },
   routes: [
+    // ── Splash — resolves session then redirects immediately ──────────────
     GoRoute(
       path: '/',
-      redirect: (context, state) {
-        if (_firstLaunch) {
-          _firstLaunch = false;
-          return '/onboarding';
-        }
-        return '/brief';
-      },
+      builder: (context, state) => const SplashScreen(),
     ),
+
+    // ── Onboarding — mark as seen when user leaves ────────────────────────
     GoRoute(
       path: '/onboarding',
-      builder: (context, state) => const OnboardingScreen(),
+      builder: (context, state) {
+        markOnboarded(); // fire-and-forget — non-blocking
+        return const OnboardingScreen();
+      },
     ),
     GoRoute(
       path: '/signup',
