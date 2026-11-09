@@ -132,7 +132,13 @@ class PayPalService:
             raise PayPalServiceError(f"PayPal create order failed: {response.status_code}")
         data = response.json()
         approval_url = next(
-            (link["href"] for link in data.get("links", []) if link.get("rel") == "approve"),
+            # PayPal returns rel="payer-action" for the payment_source.paypal flow
+            # and rel="approve" for the redirect flow — accept both
+            (
+                link["href"]
+                for link in data.get("links", [])
+                if link.get("rel") in ("approve", "payer-action")
+            ),
             "",
         )
         return PayPalOrderResult(
