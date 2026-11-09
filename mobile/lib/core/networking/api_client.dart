@@ -40,15 +40,13 @@ Dio createDio() {
             e.type == DioExceptionType.receiveTimeout) {
           isOfflineNotifier.value = true;
         }
-        // Reject with the mapped AppException directly so callers can
-        // catch `on AppException` without unwrapping DioException.error.
         handler.reject(
           DioException(
             requestOptions: e.requestOptions,
             response: e.response,
             type: e.type,
             error: mapped,
-            message: e.message,
+            message: mapped.toString(),
             stackTrace: e.stackTrace,
           ),
         );
@@ -70,34 +68,46 @@ AppException _mapToAppException(DioException e) {
           'Cannot reach the server. Is it running?');
     default:
       final status = e.response?.statusCode;
+      final msg = _responseMessage(e.response);
       if (status == null) {
-        return NetworkException(e.message ?? 'Unknown network error');
+        return NetworkException(msg ?? 'Unknown network error');
       } else if (status == 404) {
-        return NotFoundException(
-            _responseMessage(e.response) ?? 'Resource not found');
+        return NotFoundException(msg ?? 'Resource not found');
       } else if (status == 422) {
-        return ValidationException(
-            _responseMessage(e.response) ?? 'Validation error');
+        return ValidationException(msg ?? 'Validation error');
       } else if (status == 402) {
-        return PaymentException(
-            _responseMessage(e.response) ?? 'Payment error');
+        return PaymentException(msg ?? 'Payment error');
       } else {
-        return ServerException(
-            status, _responseMessage(e.response) ?? 'Server error');
+        return ServerException(status, msg ?? 'Server error ($status)');
       }
   }
 }
 
+/// Extracts a clean, human-readable error string from the response data,
+/// ensuring raw HTML error pages (e.g. 500 Internal Server Error) are never exposed.
 String? _responseMessage(Response<dynamic>? response) {
   if (response == null) return null;
   final data = response.data;
   if (data is Map<String, dynamic>) {
-    // Backend returns: {"error": "...", "status_code": ...}
-    return data['error']?.toString()
-        ?? data['detail']?.toString()
-        ?? data['message']?.toString();
+    return data['error']?.toString() ??
+        data['detail']?.toString() ??
+        data['message']?.toString();
   }
-  return data?.toString();
+  if (data is String) {
+    final str = data.trim();
+    // Detect HTML responses (e.g. 500 Internal Server Error HTML pages)
+    if (str.startsWith('<!DOCTYPE') ||
+        str.startsWith('<html') ||
+        str.contains('<title>') ||
+        str.contains('<style>')) {
+      return 'Server configuration error (${response.statusCode ?? 500}). Please try again.';
+    }
+    if (str.length > 150) {
+      return 'Server error (${response.statusCode ?? 500}). Please try again.';
+    }
+    return str;
+  }
+  return null;
 }
 
 /// Top-level singleton — shared across the app.
