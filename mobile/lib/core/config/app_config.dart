@@ -12,10 +12,11 @@ class AppConfig {
   /// Backend base URL.
   ///
   /// Set via `--dart-define=BACKEND_URL=http://...` at build/run time.
-  /// Defaults to the Android emulator loopback address.
+  /// Default: Render deployed backend (works on physical devices and everywhere).
+  /// For local emulator development override with http://10.0.2.2:8000
   static String get backendUrl => const String.fromEnvironment(
         'BACKEND_URL',
-        defaultValue: 'http://10.0.2.2:8000',
+        defaultValue: 'https://proofbuy-ai-backend.onrender.com',
       );
 
   /// PayPal Sandbox Client ID
