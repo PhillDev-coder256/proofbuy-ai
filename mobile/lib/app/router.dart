@@ -24,12 +24,18 @@ final appRouter = GoRouter(
   initialLocation: '/',
   // Handle proofbuy:// deep links: strip the custom scheme and map
   // to an internal path GoRouter can match.
+  // proofbuy://checkout/return?token=X →
+  //   scheme=proofbuy, host=checkout, path=/return
+  //   → reconstructed as /checkout/return?token=X
   redirect: (context, state) {
     final uri = state.uri;
     if (uri.scheme == 'proofbuy') {
-      final path = uri.path.startsWith('/') ? uri.path : '/${uri.path}';
+      // host + path gives the full route (e.g. "checkout" + "/return")
+      final host = uri.host.isNotEmpty ? uri.host : '';
+      final path = uri.path.isNotEmpty ? uri.path : '/';
+      final fullPath = path.startsWith('/') ? '/$host$path' : '/$host/$path';
       final query = uri.query.isNotEmpty ? '?${uri.query}' : '';
-      return '$path$query';
+      return '$fullPath$query';
     }
     return null;
   },
