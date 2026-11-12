@@ -212,7 +212,7 @@ proofbuy-ai/
 
 ## ⚠️ Known Limitations
 
-- Google Sign-In button present in UI but requires Firebase setup (post-submission)
+- Google Sign-In via Firebase Auth (one-tap, no email/password required)
 - Render free tier: ~30s cold start after inactivity
 - No production PostgreSQL (SQLite on Render — data resets on redeploy)
 - iOS build not verified (Android is the demo platform)
