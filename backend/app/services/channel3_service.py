@@ -437,6 +437,10 @@ class Channel3Service:
                 )
         except httpx.TimeoutException:
             raise Channel3ServiceError("Channel3 API timeout")
+        except httpx.HTTPStatusError as e:
+            raise Channel3ServiceError(
+                f"Channel3 API returned status {e.response.status_code}"
+            )
 
         if response.status_code == 401:
             raise Channel3AuthError()

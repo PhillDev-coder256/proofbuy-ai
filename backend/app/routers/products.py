@@ -38,10 +38,15 @@ async def get_random_products(
         random.shuffle(pool)
         return pool[:limit]
 
-    # Real mode: search broadly and shuffle
-    products = await svc.search_products("", limit=limit * 3)
-    random.shuffle(products)
-    return products[:limit]
+    # Real mode: search broadly and shuffle, fall back to mock on error
+    try:
+        products = await svc.search_products("", limit=limit * 3)
+        random.shuffle(products)
+        return products[:limit]
+    except Exception:
+        pool = list(MOCK_PRODUCTS)
+        random.shuffle(pool)
+        return pool[:limit]
 
 
 # ── Categories ────────────────────────────────────────────────────────────────
@@ -57,9 +62,13 @@ async def get_categories(
         cats = sorted({p.category_title for p in MOCK_PRODUCTS if p.category_title})
         return list(cats)
 
-    products = await svc.search_products("", limit=100)
-    cats = sorted({p.category_title for p in products if p.category_title})
-    return list(cats)
+    try:
+        products = await svc.search_products("", limit=100)
+        cats = sorted({p.category_title for p in products if p.category_title})
+        return list(cats)
+    except Exception:
+        cats = sorted({p.category_title for p in MOCK_PRODUCTS if p.category_title})
+        return list(cats)
 
 
 @router.get("/detail/{channel3_product_id}")
