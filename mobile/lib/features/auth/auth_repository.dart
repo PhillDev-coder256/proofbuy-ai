@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/errors/app_exception.dart';
+import '../../core/firestore/firestore_service.dart';
 import '../../core/networking/api_client.dart';
 
 Future<T> _call<T>(Future<T> Function() fn) async {
@@ -69,6 +70,7 @@ class AuthRepository {
       );
       final user = AuthUser.fromJson(response.data!);
       await _persist(user);
+      await FirestoreService().saveUser(user);
       return user;
     } on DioException catch (e) {
       if (e.response?.statusCode == 422 || e.response?.statusCode == 400) {
@@ -85,6 +87,7 @@ class AuthRepository {
         country: country,
       );
       await _persist(fallbackUser);
+      await FirestoreService().saveUser(fallbackUser);
       return fallbackUser;
     } catch (e) {
       if (kDebugMode) {
@@ -98,6 +101,7 @@ class AuthRepository {
         country: country,
       );
       await _persist(fallbackUser);
+      await FirestoreService().saveUser(fallbackUser);
       return fallbackUser;
     }
   }
@@ -113,6 +117,7 @@ class AuthRepository {
       );
       final user = AuthUser.fromJson(response.data!);
       await _persist(user);
+      await FirestoreService().saveUser(user);
       return user;
     } on DioException catch (e) {
       if (e.response?.statusCode == 401 || e.response?.statusCode == 422) {
@@ -132,6 +137,7 @@ class AuthRepository {
         accessToken: 'token_${DateTime.now().millisecondsSinceEpoch}',
       );
       await _persist(fallbackUser);
+      await FirestoreService().saveUser(fallbackUser);
       return fallbackUser;
     } catch (e) {
       if (kDebugMode) {
@@ -148,6 +154,7 @@ class AuthRepository {
         accessToken: 'token_${DateTime.now().millisecondsSinceEpoch}',
       );
       await _persist(fallbackUser);
+      await FirestoreService().saveUser(fallbackUser);
       return fallbackUser;
     }
   }
@@ -226,6 +233,7 @@ class AuthRepository {
         accessToken: firebaseUser.uid,
       );
       await _persist(user);
+      await FirestoreService().saveUser(user);
       return user;
     } catch (e) {
       if (kDebugMode) {
@@ -239,6 +247,7 @@ class AuthRepository {
         accessToken: 'token_google_sandbox_verified',
       );
       await _persist(demoGoogleUser);
+      await FirestoreService().saveUser(demoGoogleUser);
       return demoGoogleUser;
     }
   }

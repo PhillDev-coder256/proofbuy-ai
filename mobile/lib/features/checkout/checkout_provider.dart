@@ -1,6 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../core/errors/app_exception.dart';
+import '../../core/firestore/firestore_service.dart';
+import '../../features/auth/auth_repository.dart';
 import '../../core/networking/repositories_providers.dart';
 import 'checkout_state.dart';
 
@@ -37,6 +39,24 @@ class CheckoutNotifier extends _$CheckoutNotifier {
       final response = await ref
           .read(checkoutRepositoryProvider)
           .createCheckout(productResultId);
+
+      // Persist order to Firestore
+      final user = ref.read(currentUserProvider);
+      if (user != null) {
+        await FirestoreService().saveOrder(
+          orderId: response.orderId,
+          userId: user.userId,
+          productResultId: productResultId,
+          productName: 'Product ($productResultId)',
+          amount: 0.0,
+          currency: 'USD',
+          status: 'pending',
+          paypalOrderId: response.orderId,
+          captureId: null,
+          verified: false,
+        );
+      }
+
       state = CheckoutState.awaitingApproval(
         orderId: response.orderId,
         approvalUrl: response.approvalUrl,
@@ -57,6 +77,34 @@ class CheckoutNotifier extends _$CheckoutNotifier {
       final response = await ref
           .read(checkoutRepositoryProvider)
           .captureCheckout(orderId, purchaseId);
+
+      // Persist transaction to Firestore
+      final user = ref.read(currentUserProvider);
+      if (user != null && response.verified == true) {
+        await FirestoreService().saveTransaction(
+          transactionId: response.transactionId,
+          purchaseId: purchaseId,
+          paypalCaptureId: response.transactionId,
+          status: response.status,
+          verified: response.verified,
+          verifiedAt: DateTime.now(),
+          rawCaptureJson: {'transactionId': response.transactionId, 'status': response.status, 'verified': response.verified},
+        );
+
+        // Update order status in Firestore
+        await FirestoreService().saveOrder(
+          orderId: orderId,
+          userId: user.userId,
+          productResultId: purchaseId,
+          productName: 'Product ($purchaseId)',
+          amount: 0.0,
+          currency: 'USD',
+          status: response.verified ? 'captured' : 'failed',
+          paypalOrderId: orderId,
+          captureId: response.transactionId,
+          verified: response.verified,
+        );
+      }
 
       if (response.verified == true) {
         state = CheckoutState.success(transactionId: response.transactionId);
