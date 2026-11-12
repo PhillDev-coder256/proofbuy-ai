@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/errors/app_exception.dart';
@@ -194,9 +196,46 @@ class AuthRepository {
   }
 
 
-  // ── Google Sign-In (stub — Firebase integration post-submission) ──────────
+  // ── Google Sign-In via Firebase ─────────────────────────────────────────────
   Future<AuthUser> signInWithGoogle() async {
-    throw const ValidationException('Google sign-in: use email/password for now.');
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        throw const ValidationException('Google sign-in was cancelled.');
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      final User? firebaseUser = userCredential.user;
+      if (firebaseUser == null) {
+        throw const ValidationException('Google sign-in returned no user.');
+      }
+
+      final user = AuthUser(
+        userId: firebaseUser.uid,
+        fullName: firebaseUser.displayName ?? 'Google User',
+        email: firebaseUser.email ?? '',
+        accessToken: firebaseUser.uid,
+      );
+      await _persist(user);
+      return user;
+    } on FirebaseAuthException catch (e) {
+      throw ValidationException(
+        e.message ?? 'Google sign-in failed.',
+      );
+    } on AppException {
+      rethrow;
+    } catch (e) {
+      throw ValidationException('Google sign-in failed: $e');
+    }
   }
 
   Future<String> forgotPassword({required String email}) async {

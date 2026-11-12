@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "822500637310",
+    "project_id": "proofbuyai",
+    "storage_bucket": "proofbuyai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:822500637310:android:ad448197e4810ea940362f",
+        "android_client_info": {
+          "package_name": "com.proofbuy.proofbuy_ai"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "822500637310-rhehidrooa8o36452i9rff5r1fkvb3t8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADYPvgxHx7O8d37WTjnMXO2oWjVYydInI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "822500637310-rhehidrooa8o36452i9rff5r1fkvb3t8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

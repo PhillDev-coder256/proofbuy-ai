@@ -395,9 +395,14 @@ class _GoogleSignInButton extends StatelessWidget {
                 )
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const GoogleIcon(),
-                    const SizedBox(width: 12),
+                      children: [
+                        Image.asset(
+                          'assets/images/google-icon.jpeg',
+                          width: 20,
+                          height: 20,
+                          errorBuilder: (_, __, ___) => const GoogleIcon(),
+                        ),
+                        const SizedBox(width: 12),
                     Text('Continue with Google',
                         style: pjs(size: 15, weight: FontWeight.w600,
                             color: const Color(0xFF0A0E2E))),
