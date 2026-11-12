@@ -74,6 +74,12 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen> {
             'Order Details',
             style: pjs(size: 18, weight: FontWeight.w700, color: const Color(0xFF0F172A)),
           ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+            onPressed: () => context.pop(),
+          ),
         ),
         body: Center(
           child: Text(
