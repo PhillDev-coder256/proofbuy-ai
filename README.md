@@ -36,6 +36,7 @@ ProofBuy AI lets shoppers describe what they need in plain language and instantl
 
 ## 🚀 Live Demo
 
+**Web App:** https://proofbuyai.web.app (or https://proofbuyai.firebaseapp.com)
 **Backend:** https://proofbuy-ai-backend.onrender.com
 - Health: https://proofbuy-ai-backend.onrender.com/health
 - API Docs: https://proofbuy-ai-backend.onrender.com/docs
@@ -124,8 +125,9 @@ cd backend && .venv/bin/python -m pytest tests/ -v
 # Flutter (19 tests)
 cd mobile && flutter test
 
-# Live end-to-end on Render
+# Live end-to-end
 curl https://proofbuy-ai-backend.onrender.com/health
+# Web app: https://proofbuyai.web.app
 ```
 
 ---
@@ -133,9 +135,11 @@ curl https://proofbuy-ai-backend.onrender.com/health
 ## 🏗️ Architecture
 
 ```
-Flutter App (Android)
+Flutter App (Android/Web — Firebase Hosting)
     │  Dio HTTP → Render
     ▼
+Firebase Auth & Cloud Firestore (auth, orders, transactions)
+    │
 FastAPI Backend (Render)
     ├── /api/v1/auth/*          JWT auth (register/login/reset)
     ├── /api/v1/shopping/brief  Groq AI requirement extraction

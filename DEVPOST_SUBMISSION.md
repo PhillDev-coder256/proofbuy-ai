@@ -20,7 +20,8 @@ The flow:
 
 ### How we built it
 
-**Mobile:** Flutter 3.x + Riverpod 3.x (Android), Firebase Auth for Google Sign-In
+**Mobile:** Flutter 3.x + Riverpod 3.x (Android/Web), Firebase Auth for Google Sign-In
+**Frontend Hosting:** Firebase Hosting (https://proofbuyai.web.app)
 **Backend:** FastAPI (Python), deployed on Render
 **AI:** Groq (openai/gpt-oss-120b) for requirement extraction
 **Products:** Channel3 REST API (100M+ catalog)
@@ -50,12 +51,14 @@ Security: PayPal client secret never touches the mobile app. Amount is sourced f
 - Groq AI
 - Channel3 API
 - PayPal Orders v2
-- Firebase Auth
+- Firebase Auth & Cloud Firestore
+- Firebase Hosting
 - Render
 
 ### Try it out
 
 - **GitHub repo:** https://github.com/PhillDev-coder256/proofbuy-ai
+- **Live web app:** https://proofbuyai.web.app (or https://proofbuyai.firebaseapp.com)
 - **Live backend:** https://proofbuy-ai-backend.onrender.com/health
 - **API docs:** https://proofbuy-ai-backend.onrender.com/docs
 
