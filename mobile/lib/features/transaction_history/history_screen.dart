@@ -185,9 +185,7 @@ class _OrderCard extends ConsumerWidget {
     }
 
     return GestureDetector(
-      onTap: status == 'captured'
-          ? () => context.go('/transaction/${record.id}')
-          : null,
+      onTap: () => context.go('/orders/${record.id}', extra: item),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

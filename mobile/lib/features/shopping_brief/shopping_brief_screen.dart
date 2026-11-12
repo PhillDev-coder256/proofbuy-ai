@@ -282,8 +282,8 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                       // ── Example Briefs (Responsive Horizontal Carousel) ──
                       _SectionHeader(
                         title: 'Example Briefs',
-                        actionLabel: 'Focus Search',
-                        onAction: () => _focusNode.requestFocus(),
+                        actionLabel: 'View All Products',
+                        onAction: () => context.go('/products'),
                       ),
                       const SizedBox(height: 12),
                       _ExampleCards(onTap: _submit),
@@ -292,8 +292,8 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                       // ── Featured categories ────────────────────────────
                       _SectionHeader(
                         title: 'Featured Categories',
-                        actionLabel: 'Clear',
-                        onAction: () => _controller.clear(),
+                        actionLabel: 'All Categories',
+                        onAction: () => context.go('/categories'),
                       ),
                       const SizedBox(height: 12),
                       _FeaturedGrid(

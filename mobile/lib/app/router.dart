@@ -10,6 +10,8 @@ import '../features/auth/signin_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
+import '../features/product_browse/categories_screen.dart';
+import '../features/product_browse/products_screen.dart';
 import '../features/product_comparison/product_comparison_screen.dart';
 import '../features/product_details/product_details_screen.dart';
 import '../features/product_search/product_search_screen.dart';
@@ -18,6 +20,7 @@ import '../features/purchase_review/purchase_review_screen.dart';
 import '../features/settings/settings_screen.dart';
 import '../features/shopping_brief/shopping_brief_screen.dart';
 import '../features/transaction_history/history_screen.dart';
+import '../features/transaction_history/order_details_screen.dart';
 import '../features/transaction_result/transaction_result_screen.dart';
 
 final appRouter = GoRouter(
@@ -81,6 +84,18 @@ final appRouter = GoRouter(
       builder: (context, state) => const ShoppingBriefScreen(),
     ),
     GoRoute(
+      path: '/products',
+      builder: (context, state) => ProductsScreen(
+        category: state.uri.queryParameters['category']?.isEmpty ?? true
+            ? null
+            : state.uri.queryParameters['category'],
+      ),
+    ),
+    GoRoute(
+      path: '/categories',
+      builder: (context, state) => const CategoriesScreen(),
+    ),
+    GoRoute(
       path: '/loading/:sessionId',
       builder: (context, state) => ProductSearchScreen(
         sessionId: state.pathParameters['sessionId']!,
@@ -140,6 +155,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/history',
       builder: (context, state) => const HistoryScreen(),
+    ),
+    GoRoute(
+      path: '/orders/:recordId',
+      builder: (context, state) => OrderDetailsScreen(
+        recordId: state.pathParameters['recordId']!,
+      ),
     ),
     GoRoute(
       path: '/settings',

@@ -16,10 +16,50 @@ from app.schemas.requirements import ShoppingRequirements
 from app.services.constraint_engine import constraint_engine
 from app.services.ai_service import ai_service
 from app.services import channel3_service
-from app.services.channel3_service import get_channel3_service
+from app.services.channel3_service import get_channel3_service, MOCK_PRODUCTS
 from app.core.exceptions import NotFoundError, ValidationError
+import random
 
 router = APIRouter(prefix="/api/v1/products", tags=["products"])
+
+
+# ── Random / popular products (for browse) ────────────────────────────────────
+
+@router.get("/random", response_model=List[NormalizedProduct])
+@limiter.limit("30/minute")
+async def get_random_products(
+    request: Request,
+    limit: int = 12,
+):
+    """Return a randomized selection of products for browsing."""
+    svc = get_channel3_service()
+    if svc._is_mock():
+        pool = list(MOCK_PRODUCTS)
+        random.shuffle(pool)
+        return pool[:limit]
+
+    # Real mode: search broadly and shuffle
+    products = await svc.search_products("", limit=limit * 3)
+    random.shuffle(products)
+    return products[:limit]
+
+
+# ── Categories ────────────────────────────────────────────────────────────────
+
+@router.get("/categories", response_model=List[str])
+@limiter.limit("30/minute")
+async def get_categories(
+    request: Request,
+):
+    """Return a list of product categories for browsing."""
+    svc = get_channel3_service()
+    if svc._is_mock():
+        cats = sorted({p.category_title for p in MOCK_PRODUCTS if p.category_title})
+        return list(cats)
+
+    products = await svc.search_products("", limit=100)
+    cats = sorted({p.category_title for p in products if p.category_title})
+    return list(cats)
 
 
 @router.get("/detail/{channel3_product_id}")
