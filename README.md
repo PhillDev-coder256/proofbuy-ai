@@ -1,297 +1,230 @@
-# ProofBuy AI
+# ProofBuy AI — PayPal AI Hackathon 2026
 
-**Evidence-Backed AI Shopping with PayPal**
+> **Evidence-Backed AI Shopping with Verified PayPal Checkout**
 
-> PayPal AI Hackathon 2026 Entry
-
-ProofBuy AI transforms natural-language shopping requests into evidence-backed product comparisons. It combines AI-powered requirement extraction, real product data from Channel3, deterministic constraint validation, and a buyer-controlled PayPal checkout to help people make more confident purchasing decisions.
-
----
-
-## What It Does
-
-1. **Describe what you need** — type a plain-language shopping brief: *"I need a laptop under $1000 with at least 16GB RAM for software development"*
-2. **Review AI-extracted requirements** — see your hard constraints, soft preferences, and budget extracted into structured data you can verify
-3. **Get evidence-backed comparisons** — products ranked by how well they satisfy your constraints, with each attribute marked PASS / FAIL / UNKNOWN
-4. **Buy with confidence** — complete a PayPal checkout that is verified server-side before showing you success
+[![Live Backend](https://img.shields.io/badge/Backend-Live%20on%20Render-brightgreen)](https://proofbuy-ai-backend.onrender.com/health)
+[![GitHub](https://img.shields.io/badge/GitHub-Public-blue)](https://github.com/PhillDev-coder256/proofbuy-ai)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ---
 
-## The Problem It Addresses
+## 🎯 What It Does
 
-Online shoppers waste hours cross-referencing specs across multiple websites, trusting merchant descriptions that may be incomplete or outdated, and have no automated way to verify that a product actually meets their mandatory requirements. The research and the purchase are completely disconnected.
+ProofBuy AI lets shoppers describe what they need in plain language and instantly get **evidence-backed product recommendations** they can purchase securely with **PayPal**.
 
-ProofBuy AI connects them: the same constraints used to filter products are shown alongside each result, unknown attributes are flagged (never silently passed), and the checkout is tied to the specific verified product.
+**The problem:** Online shoppers waste hours comparing specs across websites, can't verify if products meet their requirements, and have no connection between their research and their purchase.
+
+**The solution:** One flow — describe → AI extracts requirements → real products fetched → deterministic constraint validation (PASS/FAIL/UNKNOWN) → verified PayPal checkout.
 
 ---
 
-## How It Works
+## 🏆 Hackathon Prizes Targeted
+
+- **Best Use of PayPal + AI** — PayPal Orders v2 fully integrated with server-side verification
+- **Best Use of Channel3** — 100M+ product catalog with real-time search
+- **Best Use of Render** — Backend deployed and live
+- **Best Use of Agentic Commerce** — AI agent finds, verifies, and enables purchase
+
+---
+
+## 🔧 Technology Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Mobile | Flutter 3.x (Android) | Cross-platform UI |
+| State | Riverpod 3.x | Reactive state management |
+| Backend | FastAPI (Python 3.9) | REST API |
+| AI | Groq (openai/gpt-oss-120b) | Requirement extraction |
+| Products | Channel3 REST API | 100M+ product catalog |
+| Payments | PayPal Orders v2 | Secure checkout |
+| Deployment | Render (free tier) | Backend hosting |
+| Database | SQLite (dev) / PostgreSQL (prod) | Persistence |
+| Auth | Custom JWT + bcrypt | User accounts |
+
+---
+
+## 🚀 Live Demo
+
+**Backend:** https://proofbuy-ai-backend.onrender.com
+- Health: https://proofbuy-ai-backend.onrender.com/health
+- API Docs: https://proofbuy-ai-backend.onrender.com/docs
+
+**⚠️ Note:** Render free tier spins down after 15 min inactivity. First request may take ~30 seconds. Open the health URL first to wake it up.
+
+---
+
+## 📱 How the App Works
 
 ```
-User brief (natural language)
+1. User describes need: "M3 MacBook Pro under $1500 with 16GB RAM"
         ↓
-FastAPI backend
+2. Groq AI extracts: brand=Apple, model=MacBook Pro, processor=M3,
+   ram_gb≥16, price≤1500 (dynamic — no hardcoded fields)
         ↓
-GPT-4o structured output → ShoppingRequirements schema
+3. User reviews AI-extracted requirements (fully editable)
         ↓
-Channel3 API → real products (100M+ catalog)
+4. Channel3 searches 100M+ products → returns real products with images
         ↓
-Deterministic ConstraintEngine → PASS / FAIL / UNKNOWN per attribute
+5. Deterministic ConstraintEngine: PASS / FAIL / UNKNOWN per attribute
+   (AI never touches this — 100% code)
         ↓
-Ranked product list with evidence
+6. Ranked results with evidence-backed explanations
         ↓
-Flutter mobile app shows results
+7. User selects → Purchase Review → PayPal sandbox approval
         ↓
-User selects product → PayPal Orders v2 (backend only)
+8. Backend captures payment → server-side verification
         ↓
-Server-side capture verification → verified: true
-        ↓
-Transaction persisted to DB
-```
-
----
-
-## The Role of AI
-
-GPT-4o with `strict: true` JSON schema output extracts structured shopping requirements from natural language. It identifies hard constraints (RAM ≥ 16GB), soft preferences (maximize battery life), budget limits, use case, and flags ambiguous requests for clarification.
-
-**What AI does NOT do:**
-- Evaluate constraints (that is deterministic code in `ConstraintEngine`)
-- Access the database
-- Fabricate product specifications
-- Override the budget stated by the user
-
-AI output is validated against a Pydantic schema before use. Invalid model responses raise an error rather than using bad data.
-
----
-
-## The Role of PayPal
-
-PayPal Orders v2 API handles the checkout flow:
-
-- `POST /v2/checkout/orders` — creates the order (backend only, never in the Flutter app)
-- Buyer approval via the PayPal-hosted approval URL (opened in system browser)
-- `POST /v2/checkout/orders/{id}/capture` — captures payment (backend only)
-- `GET /v2/checkout/orders/{id}` — server-side verification before marking complete
-
-The Flutter app never calls PayPal directly. The PayPal `client_secret` is never in the mobile source. Payment amount is always sourced from the database, never from the client request.
-
----
-
-## The Role of Channel3
-
-Channel3 provides access to 100M+ products from 25,000+ brands across US, UK, CA, AU, and EU markets. ProofBuy AI uses the Channel3 REST API (`POST /v1/search`) to retrieve real product listings including price, specs, merchant, and source URL.
-
-Missing fields from Channel3 are stored as `null` — the constraint engine marks them `UNKNOWN` rather than assuming compliance.
-
----
-
-## Architecture
-
-```
-Flutter Mobile App (iOS / Android)
-    │  Dio HTTP client
-    ▼
-FastAPI Backend (Python 3.11+)
-    ├── AI Service       → OpenAI GPT-4o (structured output)
-    ├── Channel3 Service → Channel3 REST API (/v1/search)
-    ├── PayPal Service   → PayPal Orders v2 (sandbox/live)
-    └── PostgreSQL DB    → SQLAlchemy 2.x async + Alembic
-```
-
-See [docs/architecture.md](docs/architecture.md) for the full diagram and component breakdown.
-
----
-
-## Project Structure
-
-```
-proofBuy-AI/
-├── backend/              FastAPI backend
-│   ├── app/
-│   │   ├── models/       SQLAlchemy models
-│   │   ├── schemas/      Pydantic v2 schemas
-│   │   ├── routers/      API endpoints
-│   │   └── services/     Channel3, AI, PayPal services
-│   ├── tests/            77 tests (unit + e2e)
-│   └── .env.example
-├── mobile/               Flutter mobile app
-│   ├── lib/
-│   │   ├── app/          Router, theme
-│   │   ├── core/         Config, networking, errors
-│   │   ├── features/     11 screens
-│   │   └── shared/       Models, providers
-│   └── test/             18 widget + repository tests
-└── docs/
-    ├── architecture.md
-    ├── technical-feasibility.md
-    ├── hackathon-requirements.md
-    ├── api-contracts.md
-    ├── ai-evaluation.md
-    ├── security.md
-    ├── product-requirements.md
-    ├── known-limitations.md
-    └── deployment.md
+9. Transaction confirmed only when PayPal returns COMPLETED
 ```
 
 ---
 
-## Setup
+## ⚡ Quick Setup
 
 ### Prerequisites
+- Python 3.9+
+- Flutter 3.x + Android SDK
+- Git
 
-- Python 3.11+
-- Flutter 3.x SDK
-- Android SDK (for APK build)
-- PostgreSQL (optional; SQLite used by default in development)
-
-### Backend
-
+### Backend (local)
 ```bash
-cd backend
-cp .env.example .env
-# Edit .env with your API keys (all optional — mock mode works without them)
-
+git clone https://github.com/PhillDev-coder256/proofbuy-ai
+cd proofbuy-ai/backend
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+cp .env.example .env  # add your keys
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The backend starts at `http://localhost:8000`. Visit `http://localhost:8000/docs` for the interactive API documentation.
-
-### Flutter
-
+### Flutter (Android)
 ```bash
 cd mobile
 flutter pub get
 
-# Run on Android emulator (uses http://10.0.2.2:8000 by default)
-flutter run
+# Run on emulator (uses local backend)
+flutter run --dart-define=BACKEND_URL=http://10.0.2.2:8000
 
-# Run against a deployed backend
-flutter run --dart-define=BACKEND_URL=https://your-backend.onrender.com
+# Run on physical device (uses Render — no local backend needed)
+flutter run
 ```
 
 ---
 
-## Environment Variables
+## 🔑 Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
-| `DATABASE_URL` | No | PostgreSQL URL (default: SQLite) |
-| `CHANNEL3_API_KEY` | No | Channel3 API key (mock mode if empty) |
-| `AI_PROVIDER_API_KEY` | No | Groq API key (mock mode if empty) |
-| `AI_MODEL` | No | Groq model (default: openai/gpt-oss-120b) |
-| `PAYPAL_CLIENT_ID` | No | PayPal client ID (mock mode if empty) |
-| `PAYPAL_CLIENT_SECRET` | No | PayPal client secret |
-| `PAYPAL_ENVIRONMENT` | No | `sandbox` or `live` (default: sandbox) |
-| `CORS_ALLOWED_ORIGINS` | No | Comma-separated allowed origins |
+| `CHANNEL3_API_KEY` | Yes | From https://trychannel3.com |
+| `AI_PROVIDER_API_KEY` | Yes | Groq API key |
+| `PAYPAL_CLIENT_ID` | Yes | PayPal Developer sandbox |
+| `PAYPAL_CLIENT_SECRET` | Yes | PayPal Developer sandbox |
+| `JWT_SECRET` | Yes | Random 32+ char string |
 
-All services have mock modes — the full app is demonstrable without any API keys.
+**All services have mock modes** — the app runs without any API keys for local testing.
 
 ---
 
-## Running the Backend
+## 🧪 Testing
 
 ```bash
-cd backend
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
+# Backend (77 tests)
+cd backend && .venv/bin/python -m pytest tests/ -v
 
-### Running Tests
+# Flutter (19 tests)
+cd mobile && flutter test
 
-```bash
-cd backend
-pytest tests/ -v
-# 77 passed, 1 skipped (live Channel3 — needs real API key)
+# Live end-to-end on Render
+curl https://proofbuy-ai-backend.onrender.com/health
 ```
 
 ---
 
-## Running the Flutter Application
+## 🏗️ Architecture
 
-```bash
-cd mobile
-
-# Analyze
-flutter analyze
-
-# Test
-flutter test
-
-# Build debug APK
-flutter build apk --debug
-
-# Build release APK (requires signing config)
-flutter build apk --release
 ```
-
-### Android Emulator Configuration
-
-The default backend URL for the Android emulator is `http://10.0.2.2:8000` (the host machine alias). No configuration needed for local development.
-
-For a deployed backend:
-```bash
-flutter run --dart-define=BACKEND_URL=https://your-backend.onrender.com
+Flutter App (Android)
+    │  Dio HTTP → Render
+    ▼
+FastAPI Backend (Render)
+    ├── /api/v1/auth/*          JWT auth (register/login/reset)
+    ├── /api/v1/shopping/brief  Groq AI requirement extraction
+    ├── /api/v1/products/*      Channel3 product search + ranking
+    ├── /api/v1/checkout/*      PayPal Orders v2 (create/capture/verify)
+    └── /api/v1/transactions/*  Transaction history
+         │
+         ├── Groq (openai/gpt-oss-120b)   AI extraction
+         ├── Channel3 (/v1/search)         Product data
+         └── PayPal (api-m.sandbox.paypal.com)  Payments
 ```
 
 ---
 
-## Testing the PayPal Sandbox
+## 🔐 PayPal Integration Details
 
-1. Create a PayPal Developer account at https://developer.paypal.com
-2. Create a sandbox app to get `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`
-3. Set these in `backend/.env`
-4. Use a PayPal sandbox buyer account to test the checkout flow
-5. Verify transaction status via `GET /api/v1/transactions/{purchase_id}`
-
-See [docs/deployment.md](docs/deployment.md) for full sandbox setup instructions.
+- **API:** PayPal Orders v2 REST (`api-m.sandbox.paypal.com`)
+- **Flow:** Create order → buyer approval → server-side capture → verification
+- **Security:** Client secret never in mobile app. Amount sourced from DB, not client. Payment only confirmed after `status == COMPLETED` verified server-side.
+- **Deep links:** `proofbuy://checkout/return` → auto-triggers capture
+- **Idempotency:** Duplicate capture requests handled safely
 
 ---
 
-## Running the Evaluation Dataset
+## 🤖 AI Integration Details
 
-The AI evaluation dataset is documented in [docs/ai-evaluation.md](docs/ai-evaluation.md) with 20 test cases covering:
+- **Model:** Groq `openai/gpt-oss-120b` with `response_format: json_object`
+- **Extraction:** Dynamic — extracts ALL relevant constraints from any product type (laptops: RAM/processor/GPU; shoes: brand/size/color; TVs: resolution/panel type/size)
+- **Validation:** Pydantic schema validation on all AI output — invalid responses raise errors
+- **Constraint engine:** 100% deterministic Python code — AI never evaluates constraints
+- **Budget guard:** AI cannot return `budget_max` higher than what user stated
 
-- Straightforward requests
-- Multi-constraint requests
-- Contradictory constraints
-- Ambiguous requests (expect clarification_needed)
-- Prompt injection attempts
+---
 
-To run: set `AI_PROVIDER_API_KEY` and execute:
-```bash
-cd backend
-pytest tests/ -v -m "not integration"
+## 📊 Key Metrics
+
+- **Backend:** 77 tests passing (unit + integration + e2e)
+- **Flutter:** 19 tests passing
+- **Products returned:** Real Channel3 data (10 per search, 100M+ catalog)
+- **PayPal:** Real sandbox orders with verified capture
+- **Constraint violations:** 0 (UNKNOWN is explicit, never treated as PASS)
+
+---
+
+## 📁 Repository Structure
+
+```
+proofbuy-ai/
+├── backend/          FastAPI backend
+│   ├── app/
+│   │   ├── models/   SQLAlchemy models (User, ShoppingSession, etc.)
+│   │   ├── schemas/  Pydantic v2 schemas
+│   │   ├── routers/  API endpoints
+│   │   └── services/ Channel3, AI (Groq), PayPal services
+│   └── tests/        77 tests
+├── mobile/           Flutter app
+│   ├── lib/
+│   │   ├── features/ 11 screens
+│   │   └── core/     Config, networking, errors
+│   └── test/         19 tests
+└── docs/             Architecture, security, known limitations
 ```
 
 ---
 
-## Known Limitations
+## ⚠️ Known Limitations
 
-See [docs/known-limitations.md](docs/known-limitations.md) for a complete honest list. Key items:
+- Google Sign-In button present in UI but requires Firebase setup (post-submission)
+- Render free tier: ~30s cold start after inactivity
+- No production PostgreSQL (SQLite on Render — data resets on redeploy)
+- iOS build not verified (Android is the demo platform)
 
-- Channel3 and OpenAI run in mock mode without real API keys
-- PayPal tested with mocked HTTP responses; real sandbox requires credentials
-- No user authentication (session-based, UUID-identified)
-- Deep link return from PayPal not verified on physical device
-- iOS build not verified
-
----
-
-## Screenshots
-
-*Screenshots will be added once a deployed demo is available.*
+See [docs/known-limitations.md](docs/known-limitations.md) for full list.
 
 ---
 
-## License
+## 📄 License
 
 MIT License — see [LICENSE](LICENSE)
 
 ---
 
-## Hackathon
-
-**Competition:** PayPal AI Hackathon 2026  
-**Deadline:** November 12, 2026, 12:00 PM Pacific Time  
-**Devpost:** https://paypalaihackathon.devpost.com/
+*Built for the PayPal AI Hackathon 2026 — Nov 1–12, 2026*
