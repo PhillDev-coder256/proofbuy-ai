@@ -1,12 +1,12 @@
 # Technical Feasibility Assessment
 
-## ProofBuy AI — PayPal AI Hackathon 2026
+## ProofBuy AI — Technical Feasibility
 
 ---
 
 ## Summary Verdict: FEASIBLE within the 6-week window
 
-All three core APIs (PayPal Orders v2, Channel3, OpenAI) are publicly accessible with free or low-cost tiers sufficient for a hackathon prototype. The riskiest unknown is the Channel3 product schema coverage for specialized items (e.g., niche electronics), which can be validated early with a free key.
+All three core APIs (PayPal Orders v2, Channel3, OpenAI) are publicly accessible with free or low-cost tiers sufficient for a production prototype. The riskiest unknown is the Channel3 product schema coverage for specialized items (e.g., niche electronics), which can be validated early with a free key.
 
 ---
 
@@ -70,10 +70,10 @@ All three core APIs (PayPal Orders v2, Channel3, OpenAI) are publicly accessible
 | Refusals | Safety refusals return a `refusal` field instead of `output_text`; must handle in code |
 | Schema limits | Up to 5,000 object properties, 10 levels of nesting, 1,000 enum values |
 
-**Cost estimate for hackathon demo (10,000 interactions):**
+**Cost estimate for demo (10,000 interactions):**
 - ~700 tokens avg per call (input+output)
 - 10,000 × 700 = 7M tokens ≈ $17.50–$70.00 total
-- Well within hackathon budget
+- Well within demo budget
 
 **Proof extraction use case:**
 GPT-4o with structured output is ideal for extracting structured data from a receipt/invoice image:
@@ -114,7 +114,7 @@ GPT-4o with structured output is ideal for extracting structured data from a rec
 | GPT-4o Product Matching | Low | 0.5 day | Low |
 | End-to-end agent orchestration | High | 3–5 days | Medium — seams between APIs |
 
-**Total estimated implementation: ~8–10 days of focused work** — comfortable within a 6-week hackathon window.
+**Total estimated implementation: ~8–10 days of focused work**
 
 ---
 

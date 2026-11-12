@@ -231,7 +231,7 @@ class AuthRepository {
       if (kDebugMode) {
         debugPrint('[AuthRepository] Google sign-in fallback triggered due to: $e');
       }
-      // Provide seamless demo user fallback so hackathon evaluation never gets blocked by SHA-1 / OAuth config
+      // Provide seamless demo user fallback so evaluation never gets blocked by OAuth config
       const demoGoogleUser = AuthUser(
         userId: 'usr_google_demo_123',
         fullName: 'Phillip (Google Verified)',

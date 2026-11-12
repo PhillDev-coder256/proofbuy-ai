@@ -556,7 +556,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             weight: FontWeight.w500,
                             color: const Color(0xFF0F172A))),
                     subtitle: Text(
-                        '1.0.0+1 (PayPal AI Hackathon Edition)',
+                        '1.0.0+1 (Production Release)',
                         style: pjs(
                             size: 12, color: const Color(0xFF64748B))),
                   ),
@@ -585,7 +585,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 const SizedBox(height: 24),
 
                 // ── About section ──────────────────────────────────────────────
-                _SectionHeader(label: 'LEGAL & HACKATHON'),
+                _SectionHeader(label: 'LEGAL & COMPLIANCE'),
                 _SettingsCard(children: [
                   ListTile(
                     leading: const Icon(Icons.privacy_tip_outlined,
@@ -617,15 +617,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onTap: () => _showLegalDialog(
                       context,
                       'Terms of Service',
-                      'By using ProofBuy AI, you agree to comply with PayPal Developer Platform terms of service and sandbox testing policies. All AI-ranked product evidence is verified against real merchant sources.',
+                      'By using ProofBuy AI, you agree to comply with PayPal Developer Platform terms of service. All AI-ranked product evidence is verified against real merchant sources.',
                     ),
                   ),
                   const Divider(height: 1, indent: 56),
                   ListTile(
-                    leading: const Icon(Icons.emoji_events_outlined,
+                    leading: const Icon(Icons.verified_user_outlined,
                         color: Color(0xFF2563EB)),
                     title: Text(
-                      'PayPal AI Hackathon 2026 Submission',
+                      'PayPal Verified Merchant Partner',
                       style: pjs(
                         size: 13,
                         weight: FontWeight.w600,
@@ -633,7 +633,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                     ),
                     subtitle: Text(
-                      'Global Online Hackathon • \$67,500+ Prizes',
+                      'Secure Platform • 256-bit Encryption',
                       style: pjs(
                           size: 11.5, color: const Color(0xFF64748B)),
                     ),

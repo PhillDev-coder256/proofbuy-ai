@@ -6,7 +6,7 @@
 class AppConfig {
   AppConfig._();
 
-  /// App Name for PayPal Developer / Hackathon submission
+  /// App Name for PayPal Developer integration
   static const String appName = 'payproof ai';
 
   /// Backend base URL.

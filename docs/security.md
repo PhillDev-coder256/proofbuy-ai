@@ -100,7 +100,7 @@ Verified: `grep -r "localhost\|127.0.0.1" mobile/lib/` returns no matches. The d
 
 | Limitation | Impact | Mitigation |
 |---|---|---|
-| No user authentication | Any user who knows a session UUID can retrieve its products | Acceptable for hackathon prototype; production would require JWT auth |
+| No user authentication | Any user who knows a session UUID can retrieve its products | Acceptable for prototype; production would require JWT auth |
 | No per-endpoint rate limiting | Backend vulnerable to brute-force / DoS | Add slowapi or similar before production deployment |
 | No PayPal webhook verification | Cannot receive server-push payment updates | Polling-based verification used instead; webhooks would improve reliability |
 | No CSRF protection | Stateless API is not vulnerable to CSRF in its current form | Relevant if cookie-based auth is added |

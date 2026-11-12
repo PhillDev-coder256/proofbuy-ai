@@ -1,6 +1,6 @@
 # Architecture — ProofBuy AI
 
-## PayPal AI Hackathon 2026
+## ProofBuy AI Architecture
 
 ---
 
@@ -75,8 +75,8 @@ ProofBuy AI is an agentic mobile commerce tool that:
 | Backend HTTP | httpx | 0.28.1 | Async HTTP for external APIs |
 | AI | OpenAI GPT-4o | gpt-4o-2024-08-06 | Structured output (`strict: true`) |
 | Product data | Channel3 REST API | v1 | 100M+ products, free 1K/mo |
-| Payments | PayPal Orders v2 | — | Hackathon requirement |
-| Deployment | Render | — | Hackathon sponsor |
+| Payments | PayPal Orders v2 | — | Core requirement |
+| Deployment | Render | — | Hosting provider |
 
 ---
 

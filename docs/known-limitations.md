@@ -80,7 +80,7 @@ If the backend is slow (Render spin-up), the Flutter loading screens have a 30-s
 
 ---
 
-## Not Implemented (out of scope for hackathon)
+## Not Implemented (out of scope for MVP)
 
 - User authentication and account management
 - Price history charts (Channel3 price tracking API)

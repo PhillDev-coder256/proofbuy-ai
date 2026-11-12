@@ -79,10 +79,10 @@ async def login(
 async def get_me(
     db: AsyncSession = Depends(get_db),
     # Simple header-based auth — extract token manually
-    # (avoids OAuth2 dependency complexity for the hackathon)
+    # (avoids OAuth2 dependency complexity):
 ):
     """Returns the current user. Token passed as Authorization: Bearer <token>."""
-    # This is handled below via dependency — kept simple for hackathon scope
+    # This is handled below via dependency:
     raise NotFoundError("Use Authorization header: Bearer <token>")
 
 
@@ -115,7 +115,7 @@ async def forgot_password(
     """
     Request a password reset OTP.
 
-    For the hackathon we return the OTP directly in the response (no email
+    Return the OTP directly in the response (no email
     server configured). In production, remove `otp` from the response and send
     it via email instead.
 

@@ -1,9 +1,9 @@
 # Phase 1 Research Report
 
-## ProofBuy AI — PayPal AI Hackathon 2026
+## ProofBuy AI — Product Research Report
 
 **Prepared:** October 2026
-**Scope:** Hackathon rules, PayPal Orders v2, Channel3 API, OpenAI structured outputs
+**Scope:** Product requirements, PayPal Orders v2, Channel3 API, OpenAI structured outputs
 
 ---
 
@@ -20,7 +20,7 @@ All four research areas are resolved with high confidence. ProofBuy AI is techni
 
 ---
 
-## 1. Hackathon Requirements
+## 1. Product Requirements
 
 ### Key Findings
 

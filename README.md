@@ -1,4 +1,4 @@
-# ProofBuy AI — PayPal AI Hackathon 2026
+# ProofBuy AI — Evidence-Backed AI Shopping with Verified PayPal Checkout
 
 > **Evidence-Backed AI Shopping with Verified PayPal Checkout**
 
@@ -18,19 +18,10 @@ ProofBuy AI lets shoppers describe what they need in plain language and instantl
 
 ---
 
-## 🏆 Hackathon Prizes Targeted
-
-- **Best Use of PayPal + AI** — PayPal Orders v2 fully integrated with server-side verification
-- **Best Use of Channel3** — 100M+ product catalog with real-time search
-- **Best Use of Render** — Backend deployed and live
-- **Best Use of Agentic Commerce** — AI agent finds, verifies, and enables purchase
-
----
-
 ## 🔧 Technology Stack
 
 | Layer | Technology | Purpose |
-|---|---|---|
+|-------|------------|---------|
 | Mobile | Flutter 3.x (Android) | Cross-platform UI |
 | State | Riverpod 3.x | Reactive state management |
 | Backend | FastAPI (Python 3.9) | REST API |
@@ -227,4 +218,4 @@ MIT License — see [LICENSE](LICENSE)
 
 ---
 
-*Built for the PayPal AI Hackathon 2026 — Nov 1–12, 2026*
+*Built for secure, evidence-backed AI shopping with verified PayPal checkout.*

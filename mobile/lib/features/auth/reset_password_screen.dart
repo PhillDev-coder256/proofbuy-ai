@@ -12,7 +12,7 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({
     super.key,
     required this.email,
-    this.devOtp, // shown in app during hackathon (no email server)
+    this.devOtp, // shown in app during development (no email server)
   });
 
   final String email;

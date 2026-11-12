@@ -196,13 +196,6 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
               color: const Color(0xFF2563EB),
             ),
             const Divider(height: 20),
-            _NotificationItem(
-              title: 'Hackathon Submission Active',
-              subtitle: 'Deadline: Nov 12, 2026. \$67,500+ in prizes.',
-              time: '1h ago',
-              icon: Icons.emoji_events_rounded,
-              color: const Color(0xFF059669),
-            ),
           ],
         ),
       ),
@@ -261,8 +254,8 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                     children: [
                       const SizedBox(height: 12),
 
-                      // ── Hackathon Demo Banner ──────────────────────────
-                      _HackathonBadgeCard(),
+                      // ── Secure Platform Banner ──────────────────────────
+                      _SecurePlatformBadgeCard(),
                       const SizedBox(height: 16),
 
                       // ── Hero header ──────────────────────────────────────
@@ -286,9 +279,9 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                       ),
                       const SizedBox(height: 28),
 
-                      // ── Try an example (Responsive Horizontal Carousel) ──
+                      // ── Example Briefs (Responsive Horizontal Carousel) ──
                       _SectionHeader(
-                        title: '⚡ Hackathon Demo Briefs',
+                        title: 'Example Briefs',
                         actionLabel: 'Focus Search',
                         onAction: () => _focusNode.requestFocus(),
                       ),
@@ -401,10 +394,10 @@ class _NotificationItem extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hackathon Demo Badge Card
+// Secure Platform Badge Card
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _HackathonBadgeCard extends StatelessWidget {
+class _SecurePlatformBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -430,7 +423,7 @@ class _HackathonBadgeCard extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.emoji_events_rounded,
+            child: const Icon(Icons.verified_user_rounded,
                 color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
@@ -439,7 +432,7 @@ class _HackathonBadgeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'PayPal AI Hackathon • Sandbox Live',
+                  'PayPal Secure Commerce • AI Agent Active',
                   style: pjs(
                     size: 13,
                     weight: FontWeight.w700,

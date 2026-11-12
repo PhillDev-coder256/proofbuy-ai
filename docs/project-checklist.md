@@ -3,7 +3,7 @@
 Last updated: 2026-10-14
 
 ## Phase 1 — Research and Feasibility ✅
-- [x] Hackathon rules and deadlines verified → docs/hackathon-requirements.md
+- [x] Product requirements documented → docs/technical-feasibility.md
 - [x] Channel3 API documented → docs/technical-feasibility.md
 - [x] PayPal Orders v2 API documented → docs/technical-feasibility.md
 - [x] OpenAI structured output documented → docs/technical-feasibility.md
@@ -102,7 +102,7 @@ Last updated: 2026-10-14
 - [x] .env.example (root level, all variables with placeholders)
 - [x] .gitignore (Python, Flutter, macOS, secrets)
 - [x] docs/architecture.md ✅
-- [x] docs/hackathon-requirements.md ✅
+- [x] docs/technical-feasibility.md ✅
 - [x] docs/technical-feasibility.md ✅
 - [x] docs/api-contracts.md ✅
 - [x] docs/ai-evaluation.md ✅
@@ -114,7 +114,7 @@ Last updated: 2026-10-14
 - [ ] Repository pushed to GitHub (public)
 - [ ] Backend deployed to Render
 - [ ] Demo video recorded (max 3 minutes)
-- [ ] Hackathon submission on Devpost
+- [ ] Submission on Devpost
 
 ## Definition of Done Checklist
 
@@ -161,7 +161,7 @@ Last updated: 2026-10-14
 - [x] Sandbox vs live distinction clear (PAYPAL_ENVIRONMENT)
 
 ### Submission
-- [x] Official requirements verified (docs/hackathon-requirements.md)
+- [x] Official requirements verified → docs/technical-feasibility.md
 - [ ] Repository public and licensed ← needs GitHub push
 - [x] Setup documentation complete (docs/deployment.md + README.md)
 - [ ] Demonstration functional (needs deployment)

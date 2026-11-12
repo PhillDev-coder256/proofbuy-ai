@@ -426,7 +426,7 @@ Recommended ordering: 1 → 2 → 12 → 3 → 4 → 5 → 6 → 7 → 8 → 9 �
   7. **Section 'About'**:
      - `ListTile` → 'Privacy Policy' → placeholder snackbar.
      - `ListTile` → 'Terms of Service' → placeholder snackbar.
-     - `ListTile` → subtitle `'Built for PayPal AI Hackathon 2026'`, read-only (no leading icon).
+      - `ListTile` → subtitle `'Built for secure AI shopping with verified PayPal checkout'`, read-only (no leading icon).
   8. **Sign Out button**: red `ElevatedButton` at bottom:
      ```dart
      ElevatedButton(

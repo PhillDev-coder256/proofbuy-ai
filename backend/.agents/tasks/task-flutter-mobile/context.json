@@ -1,5 +1,5 @@
 {
-  "project_type": "Flutter mobile app (Android/iOS) + FastAPI backend, ProofBuy AI PayPal hackathon project",
+  "project_type": "Flutter mobile app (Android/iOS) + FastAPI backend, ProofBuy AI product",
   "language": "Dart (Flutter 3.47.1, Dart 3.13.1)",
   "build_system": "Flutter SDK via Homebrew at /opt/homebrew/bin/flutter. Backend is Python/FastAPI at /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/backend/. Mobile app will live at /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile/ (does not exist yet — must be created with flutter create). ALWAYS use absolute paths; the workspace root is the Mac home, not the Flutter project.",
   "test_framework": "flutter_test (SDK), mocktail ^1.0.4 for mocks. Run with: cd /Users/testbedmac1/philldevcoder/projects/proofBuy-AI/mobile && flutter test",

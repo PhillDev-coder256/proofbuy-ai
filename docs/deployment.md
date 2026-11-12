@@ -218,4 +218,4 @@ See [known-limitations.md](known-limitations.md) for a complete list. Critical f
 - No user authentication — all sessions are public by UUID
 - No rate limiting — add before public deployment  
 - Render free tier spins down — use Starter for demo day
-- iOS build not verified — Android only for hackathon
+- iOS build not verified — Android only
