@@ -76,17 +76,23 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen> {
           ),
           elevation: 0,
           backgroundColor: Colors.transparent,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
-            onPressed: () => context.pop(),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
-        body: Center(
-          child: Text(
-            'Order details not found.',
-            style: pjs(size: 14, color: const Color(0xFF64748B)),
-          ),
+      ),
+      body: Center(
+        child: Text(
+          'Order details not found.',
+          style: pjs(size: 14, color: const Color(0xFF64748B)),
         ),
+      ),
       );
     }
 
@@ -110,7 +116,13 @@ class _OrderDetailsScreenState extends ConsumerState<OrderDetailsScreen> {
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
         ),
       ),
       body: SafeArea(
