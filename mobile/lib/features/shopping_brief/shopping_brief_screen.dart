@@ -48,7 +48,7 @@ const _quickCategories = [
   _QuickCategory(icon: Icons.smartphone_rounded, label: 'Phone'),
   _QuickCategory(icon: Icons.headphones_rounded, label: 'Headphones'),
   _QuickCategory(icon: Icons.camera_alt_outlined, label: 'Camera'),
-  _QuickCategory(icon: Icons.more_horiz_rounded, label: 'More'),
+  _QuickCategory(icon: Icons.watch_rounded, label: 'Watch'),
 ];
 
 const _examples = [
@@ -143,10 +143,70 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
 
   void _submit([String? override]) {
     final text = override ?? _controller.text.trim();
-    if (text.length < 5) return;
+    if (text.length < 3) return;
     _focusNode.unfocus();
     if (override != null) _controller.text = override;
     ref.read(shoppingBriefProvider.notifier).submitBrief(text);
+  }
+
+  void _showNotifications(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Notifications',
+                  style: pjs(
+                    size: 18,
+                    weight: FontWeight.w800,
+                    color: const Color(0xFF0F172A),
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _NotificationItem(
+              title: 'PayPal Sandbox Live',
+              subtitle: 'App "payproof ai" connected to sandbox successfully.',
+              time: 'Just now',
+              icon: Icons.account_balance_wallet_rounded,
+              color: const Color(0xFF0070BA),
+            ),
+            const Divider(height: 20),
+            _NotificationItem(
+              title: 'AI Product Evidence Ready',
+              subtitle: 'Last search successfully ranked with 96% confidence.',
+              time: '2m ago',
+              icon: Icons.auto_awesome_rounded,
+              color: const Color(0xFF2563EB),
+            ),
+            const Divider(height: 20),
+            _NotificationItem(
+              title: 'Hackathon Submission Active',
+              subtitle: 'Deadline: Nov 12, 2026. \$67,500+ in prizes.',
+              time: '1h ago',
+              icon: Icons.emoji_events_rounded,
+              color: const Color(0xFF059669),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -187,7 +247,10 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
           child: Column(
             children: [
               // ── App bar ─────────────────────────────────────────────────
-              _HomeAppBar(firstName: firstName),
+              _HomeAppBar(
+                firstName: firstName,
+                onNotificationTap: () => _showNotifications(context),
+              ),
 
               // ── Scrollable content ──────────────────────────────────────
               Expanded(
@@ -218,8 +281,7 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                       // ── Quick category chips ────────────────────────────
                       _QuickCategories(
                         onTap: (label) {
-                          _controller.text = '$label ';
-                          _focusNode.requestFocus();
+                          _submit('Top rated $label with verified specs under \$1000');
                         },
                       ),
                       const SizedBox(height: 28),
@@ -227,8 +289,8 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                       // ── Try an example (Responsive Horizontal Carousel) ──
                       _SectionHeader(
                         title: '⚡ Hackathon Demo Briefs',
-                        actionLabel: 'See more',
-                        onAction: () {},
+                        actionLabel: 'Focus Search',
+                        onAction: () => _focusNode.requestFocus(),
                       ),
                       const SizedBox(height: 12),
                       _ExampleCards(onTap: _submit),
@@ -237,11 +299,15 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                       // ── Featured categories ────────────────────────────
                       _SectionHeader(
                         title: 'Featured Categories',
-                        actionLabel: 'View all',
-                        onAction: () {},
+                        actionLabel: 'Clear',
+                        onAction: () => _controller.clear(),
                       ),
                       const SizedBox(height: 12),
-                      _FeaturedGrid(),
+                      _FeaturedGrid(
+                        onTap: (label) {
+                          _submit('Best selling $label with verified warranty and fast shipping');
+                        },
+                      ),
                       const SizedBox(height: 28),
 
                       // ── Why ProofBuy AI (Responsive Cards) ──────────────
@@ -257,7 +323,9 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
                 currentIndex: _navIndex,
                 onTap: (i) {
                   setState(() => _navIndex = i);
-                  if (i == 1) context.go('/results/search');
+                  if (i == 1) {
+                    _focusNode.requestFocus();
+                  }
                   if (i == 2) context.go('/history');
                   if (i == 3) context.go('/settings');
                 },
@@ -266,6 +334,68 @@ class _ShoppingBriefScreenState extends ConsumerState<ShoppingBriefScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification Item
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _NotificationItem extends StatelessWidget {
+  const _NotificationItem({
+    required this.title,
+    required this.subtitle,
+    required this.time,
+    required this.icon,
+    required this.color,
+  });
+
+  final String title;
+  final String subtitle;
+  final String time;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: pjs(
+                  size: 14,
+                  weight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: pjs(size: 12, color: const Color(0xFF64748B)),
+              ),
+            ],
+          ),
+        ),
+        Text(
+          time,
+          style: pjs(size: 11, color: const Color(0xFF94A3B8)),
+        ),
+      ],
     );
   }
 }
@@ -354,8 +484,12 @@ class _HackathonBadgeCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _HomeAppBar extends StatelessWidget {
-  const _HomeAppBar({required this.firstName});
+  const _HomeAppBar({
+    required this.firstName,
+    required this.onNotificationTap,
+  });
   final String firstName;
+  final VoidCallback onNotificationTap;
 
   @override
   Widget build(BuildContext context) {
@@ -424,65 +558,71 @@ class _HomeAppBar extends StatelessWidget {
           const Spacer(),
 
           // Notification bell
-          Stack(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x06000000),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  size: 20,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFEF4444),
+          GestureDetector(
+            onTap: onNotificationTap,
+            child: Stack(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x06000000),
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.notifications_outlined,
+                    size: 20,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
-              ),
-            ],
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFFEF4444),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
 
           const SizedBox(width: 10),
 
           // User avatar
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+          GestureDetector(
+            onTap: () => context.go('/settings'),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                ),
               ),
-            ),
-            child: Center(
-              child: Text(
-                initials,
-                style: pjs(
-                  size: 15,
-                  weight: FontWeight.w700,
-                  color: Colors.white,
+              child: Center(
+                child: Text(
+                  initials,
+                  style: pjs(
+                    size: 15,
+                    weight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -683,7 +823,11 @@ class _SearchBoxState extends State<_SearchBox> {
                       color: const Color(0xFF64748B),
                       bgColor: const Color(0xFFF1F5F9),
                       size: 38,
-                      onTap: () {},
+                      onTap: () {
+                        widget.controller.text =
+                            'M3 MacBook Pro under \$1500 with 16GB RAM';
+                        widget.onSubmit();
+                      },
                     ),
                     const SizedBox(width: 8),
                     _CircleIconBtn(
@@ -957,6 +1101,9 @@ class _ExampleCards extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _FeaturedGrid extends StatelessWidget {
+  const _FeaturedGrid({required this.onTap});
+  final void Function(String label) onTap;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -969,28 +1116,31 @@ class _FeaturedGrid extends StatelessWidget {
 
           return Padding(
             padding: EdgeInsets.only(right: isLast ? 0 : 12),
-            child: Column(
-              children: [
-                Container(
-                  width: 58,
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: c.bgColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+            child: GestureDetector(
+              onTap: () => onTap(c.label),
+              child: Column(
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: c.bgColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Icon(c.icon, size: 26, color: c.iconColor),
                   ),
-                  child: Icon(c.icon, size: 26, color: c.iconColor),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  c.label,
-                  style: pjs(
-                    size: 11.5,
-                    weight: FontWeight.w600,
-                    color: const Color(0xFF334155),
+                  const SizedBox(height: 6),
+                  Text(
+                    c.label,
+                    style: pjs(
+                      size: 11.5,
+                      weight: FontWeight.w600,
+                      color: const Color(0xFF334155),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         }).toList(),

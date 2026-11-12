@@ -25,6 +25,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   bool _obscure  = true;
   bool _loading  = false;
+  bool _googleLoading = false;
   bool _saveEmail = true;
 
   @override
@@ -106,6 +107,32 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
+  }
+
+  Future<void> _signInWithGoogle() async {
+    setState(() => _googleLoading = true);
+    try {
+      final user = await ref.read(authRepositoryProvider).signInWithGoogle();
+      ref.read(currentUserProvider.notifier).setUser(user);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Welcome, ${user.fullName.split(' ').first}!',
+              style: pjs(size: 13, color: Colors.white)),
+          backgroundColor: const Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) context.go('/brief');
+    } on AppException catch (e) {
+      if (mounted) _showError(_messageFrom(e));
+    } catch (e) {
+      if (mounted) _showError('Google sign-in failed. Please try again.');
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
   }
 
   @override
@@ -308,26 +335,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const AuthDivider(),
                   const SizedBox(height: 16),
 
-                  // Social buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AuthSocialButton(
-                          label: 'Continue with Google',
-                          icon: const GoogleIcon(),
-                          onPressed: () {},
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: AuthSocialButton(
-                          label: 'Continue with Apple',
-                          icon: const Icon(Icons.apple,
-                              size: 20, color: Color(0xFF0A0E2E)),
-                          onPressed: () {},
-                        ),
-                      ),
-                    ],
+                  // Google Sign-In (full width)
+                  _GoogleSignInButton(
+                    onPressed: _signInWithGoogle,
+                    loading: _googleLoading,
                   ),
 
                   const SizedBox(height: 16),
@@ -363,6 +374,66 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Full-width Google Sign-In button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _GoogleSignInButton extends StatelessWidget {
+  const _GoogleSignInButton({required this.onPressed, this.loading = false});
+
+  final VoidCallback onPressed;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Continue with Google',
+      child: GestureDetector(
+        onTap: loading ? null : onPressed,
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: const [
+              BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2)),
+            ],
+          ),
+          child: loading
+              ? const Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2.5, color: Color(0xFF6C47FF)),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const GoogleIcon(),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Continue with Google',
+                      style: pjs(
+                        size: 15,
+                        weight: FontWeight.w600,
+                        color: const Color(0xFF0A0E2E),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

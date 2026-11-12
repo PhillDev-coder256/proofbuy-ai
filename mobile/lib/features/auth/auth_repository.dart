@@ -193,6 +193,12 @@ class AuthRepository {
     return prefs.getString('saved_email_hint');
   }
 
+
+  // ── Google Sign-In (stub — Firebase integration post-submission) ──────────
+  Future<AuthUser> signInWithGoogle() async {
+    throw const ValidationException('Google sign-in: use email/password for now.');
+  }
+
   Future<String> forgotPassword({required String email}) async {
     return _call(() async {
       final response = await _dio.post<Map<String, dynamic>>(
