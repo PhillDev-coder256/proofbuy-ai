@@ -11,7 +11,7 @@ from app.core.rate_limiter import limiter
 from app.database import get_db
 from app.models.product_result import ProductResult
 from app.models.shopping_session import ShoppingSession
-from app.schemas.product import ProductResultResponse, RankedProduct
+from app.schemas.product import NormalizedProduct, ProductResultResponse, RankedProduct
 from app.schemas.requirements import ShoppingRequirements
 from app.services.constraint_engine import constraint_engine
 from app.services.ai_service import ai_service
